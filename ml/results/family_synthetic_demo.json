@@ -1,0 +1,9 @@
+{
+  "source": "synthetic",
+  "target": "generator_mode",
+  "independent_test_seed": 719,
+  "train_seed": 718,
+  "train_pairs": 1000,
+  "test_pairs": 250,
+  "accuracy": 0.86
+}

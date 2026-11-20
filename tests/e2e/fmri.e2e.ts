@@ -1,0 +1,37 @@
+import { expect, test } from './workspace';
+
+test('NYU demo renders changing frames, pauses, and switches back to structural MRI', async({page,workspace}) => {
+  test.setTimeout(120000);
+  const errors: string[] = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.goto('/mri');
+  await page.getByRole('button', { name: 'fMRI · NYU', exact: true }).click();
+  await expect(page.getByText('Каждая деталь — часть целого', { exact: true })).toBeVisible({ timeout: 30000 });
+  await page.getByRole('button', { name: 'Открыть демо', exact: true }).click();
+  const frame = page.getByLabel('Кадр fMRI', { exact: true });
+  await expect(frame).toBeEnabled({ timeout: 30000 });
+  await expect(frame).toHaveAttribute('max', '11');
+  const canvas = page.locator('.mri-canvas-host canvas');
+  const first = await canvas.screenshot();
+  await frame.fill('8');
+  await expect(page.getByText('Кадр 9 из 12')).toBeVisible();
+  expect(Buffer.compare(first, await canvas.screenshot())).not.toBe(0);
+  await page.getByRole('button', { name: 'Воспроизвести серию', exact: true }).click();
+  await expect(frame).not.toHaveValue('8');
+  await page.getByRole('button', { name: 'Пауза', exact: true }).click();
+  const paused = await frame.inputValue();
+  await page.waitForTimeout(600);
+  await expect(frame).toHaveValue(paused);
+  await page.screenshot({ path: 'test-results/fmri-desktop.png', fullPage: true });
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: 'test-results/fmri-mobile.png', fullPage: true });
+  await page.getByRole('button', { name: 'Структурное МРТ', exact: true }).click();
+  await page.getByRole('button', { name: 'Открыть демо', exact: true }).click();
+  await expect(page.getByLabel('Срез X')).toBeEnabled();
+  await expect(frame).toHaveCount(0);
+  await page.getByLabel('Выберите МРТ-файлы').setInputFiles('server/materials/demo/nyu-rest-demo.nii.gz');
+  await expect(frame).toBeEnabled();
+  await expect(frame).toHaveValue('0');
+  expect(errors).toEqual([]);
+});

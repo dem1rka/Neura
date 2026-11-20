@@ -1,0 +1,14 @@
+{
+  "file": "nyu-rest-demo.nii.gz",
+  "originalBytes": 8110432,
+  "compressedBytes": 7385278,
+  "dimensions": [
+    64,
+    80,
+    33,
+    12
+  ],
+  "originalSha256": "7d780720bac39e88ac7c340dd4b38110120b7756a273dc17bdd1d403c7fb3a59",
+  "source": "NYU/0050952/session_1/rest_1/rest.nii.gz",
+  "description": "First 12 of 180 frames. Original spatial resolution and TR (2 s)."
+}

@@ -1,0 +1,17 @@
+.family-shell{max-width:820px;margin:auto;padding:clamp(16px,5vw,64px);color:var(--ink,inherit)}
+.family-box{--paper:#fafbf8;--line:#cbd7d1;--leaf:#215747;--type:#1b332b;background:var(--paper);color:var(--type);border:1px solid var(--line);border-radius:22px;padding:clamp(18px,3vw,34px);margin:12px 0}
+[data-theme=dark] .family-box{--paper:#182723;--line:#41564c;--leaf:#a1dbbf;--type:#eef5f1}
+.family-box h1,.family-box h2,.family-box h3{color:var(--type);margin:8px 0 18px}.family-box h1{font-family:Georgia,serif;font-weight:500;font-size:clamp(28px,5vw,44px)}
+.family-box label{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.family-box input:not([type=checkbox]),.family-box select{min-width:0;max-width:100%;padding:8px;border:1px solid var(--line);border-radius:8px;color:inherit;background:var(--paper)}
+.family-box button{background:var(--leaf);color:var(--paper);border:1px solid transparent;padding:10px 16px;border-radius:12px;cursor:pointer}
+.family-box button:disabled{opacity:.55}.family-box form,.family-top,.family-tabs{display:flex;align-items:center;flex-wrap:wrap;gap:12px}.family-top{justify-content:space-between}
+.family-tabs button:not([aria-pressed=true]),.answer-grid button{background:var(--paper);color:var(--type);border-color:var(--line)}
+.family-row{color:inherit;text-decoration:none;display:flex;align-items:center;gap:14px;border-top:1px solid var(--line);padding:16px 0}.family-row span{flex:1}.family-row small{display:block}.family-row svg,.task-step>svg{color:var(--leaf)}
+.family-progress{display:flex;gap:5px;margin:24px 0}.family-progress i{height:4px;background:var(--line);flex:1;border-radius:4px}.family-progress i[data-active=true]{background:var(--leaf)}
+.answer-grid{display:grid;gap:10px}.answer-grid button{text-align:start;min-height:48px}.family-box :focus-visible{outline:3px solid var(--leaf);outline-offset:2px}.family-notice{padding:12px;overflow-wrap:anywhere}
+@media(prefers-reduced-motion:no-preference){.task-step{animation:family-in .22s ease-out}.family-row:hover{color:var(--leaf)}@keyframes family-in{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}}
+
+.family-frame>.family-top{max-width:1020px;margin:0 auto;padding:16px 24px;border-bottom:1px solid var(--surface-border)}
+.family-frame>.family-top>b{font:500 26px Georgia,serif;color:var(--text-primary)}
+.family-frame .cabinet-hero{background:var(--deep)}
+.family-frame .cabinet-hero:after{display:none}

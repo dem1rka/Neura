@@ -1,0 +1,314 @@
+{
+  "protocol": "nested-leave-one-center-out-v1",
+  "seed": 718,
+  "sources": [
+    {
+      "file": "ABIDEII-GU_1.tsv",
+      "url": "https://s3.amazonaws.com/fcp-indi/data/Projects/ABIDE2/RawData/ABIDEII-GU_1/participants.tsv",
+      "sha256": "b1827df39d164bc93062f3cdd8d172f265e3d5411101a469c4930e3983db88b3"
+    },
+    {
+      "file": "ABIDEII-KKI_1.tsv",
+      "url": "https://s3.amazonaws.com/fcp-indi/data/Projects/ABIDE2/RawData/ABIDEII-KKI_1/participants.tsv",
+      "sha256": "2e144da86cb3c05bef17a68f2a44647f6327476a48f56132b56ec65f8971d610"
+    },
+    {
+      "file": "ABIDEII-NYU_1.tsv",
+      "url": "https://s3.amazonaws.com/fcp-indi/data/Projects/ABIDE2/RawData/ABIDEII-NYU_1/participants.tsv",
+      "sha256": "37e052097d2c82edc5780a3a0c14812328b42552296fa248cab0bb8f230febd5"
+    },
+    {
+      "file": "ABIDEII-OHSU_1.tsv",
+      "url": "https://s3.amazonaws.com/fcp-indi/data/Projects/ABIDE2/RawData/ABIDEII-OHSU_1/participants.tsv",
+      "sha256": "1b56f54e51a343d179718c003b2ec7bfa2b6b16169e1990a6b7faf61562d9a49"
+    },
+    {
+      "file": "ABIDEII-SDSU_1.tsv",
+      "url": "https://s3.amazonaws.com/fcp-indi/data/Projects/ABIDE2/RawData/ABIDEII-SDSU_1/participants.tsv",
+      "sha256": "549a22235cece01c4450c8abbdfe031e81f746f627cc116a196dce21a6c0b2a4"
+    },
+    {
+      "file": "ABIDEII-TCD_1.tsv",
+      "url": "https://s3.amazonaws.com/fcp-indi/data/Projects/ABIDE2/RawData/ABIDEII-TCD_1/participants.tsv",
+      "sha256": "8d71b4e70f69d5c898abe70b4f1b1f4ab11fbb302f058ba369bb8748fd3500bb"
+    },
+    {
+      "file": "abide.csv",
+      "url": "https://s3.amazonaws.com/fcp-indi/data/Projects/ABIDE/Phenotypic_V1_0b_preprocessed1.csv",
+      "sha256": "009f01a89697113e5375ded4fbcff4c85e89a4daa6d13e63c21ae5d57dda0865"
+    }
+  ],
+  "audit": {
+    "ABIDEII-GU_1.tsv": {
+      "total_rows": 106,
+      "outside_age_or_label": 26,
+      "included": 79,
+      "incomplete_or_incompatible_srs": 1
+    },
+    "ABIDEII-KKI_1.tsv": {
+      "total_rows": 211,
+      "included": 177,
+      "incomplete_or_incompatible_srs": 9,
+      "outside_age_or_label": 25
+    },
+    "ABIDEII-NYU_1.tsv": {
+      "total_rows": 78,
+      "included": 65,
+      "outside_age_or_label": 12,
+      "incomplete_or_incompatible_srs": 1
+    },
+    "ABIDEII-OHSU_1.tsv": {
+      "total_rows": 93,
+      "outside_age_or_label": 37,
+      "included": 48,
+      "incomplete_or_incompatible_srs": 8
+    },
+    "ABIDEII-SDSU_1.tsv": {
+      "total_rows": 58,
+      "included": 25,
+      "outside_age_or_label": 32,
+      "incomplete_or_incompatible_srs": 1
+    },
+    "ABIDEII-TCD_1.tsv": {
+      "total_rows": 42,
+      "srs_used_in_control_selection": 42
+    },
+    "abide.csv": {
+      "total_rows": 1112,
+      "outside_age_or_label": 804,
+      "outside_external_protocol": 287,
+      "included": 21
+    }
+  },
+  "ages": [
+    5.22,
+    11.99
+  ],
+  "age_under_6": 9,
+  "folds": {
+    "ABIDEII-GU_1": {
+      "model": "logistic_C10",
+      "threshold": 0.42500000000000004,
+      "search": {
+        "logistic_C0.1": 0.9868408662564003,
+        "logistic_C1": 0.9872609654302709,
+        "logistic_C10": 0.9882905464367564,
+        "boost_depth1": 0.9818154427965391,
+        "boost_depth2": 0.9824162459932625
+      },
+      "metrics": {
+        "n": 79,
+        "asd": 37,
+        "tn": 40,
+        "fp": 2,
+        "fn": 3,
+        "tp": 34,
+        "accuracy": 0.9367088607594937,
+        "balanced_accuracy": 0.9356499356499357,
+        "sensitivity": 0.918918918918919,
+        "specificity": 0.9523809523809523,
+        "auc": 0.9897039897039897,
+        "average_precision": 0.9876841328419139,
+        "brier": 0.046191888370432886
+      }
+    },
+    "ABIDEII-KKI_1": {
+      "model": "logistic_C10",
+      "threshold": 0.6,
+      "search": {
+        "logistic_C0.1": 0.9842065418988496,
+        "logistic_C1": 0.9863857556165249,
+        "logistic_C10": 0.9871901314209006,
+        "boost_depth1": 0.9780523963216271,
+        "boost_depth2": 0.9761187790033944
+      },
+      "metrics": {
+        "n": 177,
+        "asd": 43,
+        "tn": 131,
+        "fp": 3,
+        "fn": 1,
+        "tp": 42,
+        "accuracy": 0.9774011299435028,
+        "balanced_accuracy": 0.9771780631725095,
+        "sensitivity": 0.9767441860465116,
+        "specificity": 0.9776119402985075,
+        "auc": 0.9993057965984034,
+        "average_precision": 0.9979424835986552,
+        "brier": 0.014950553403835413
+      }
+    },
+    "ABIDEII-NYU_1": {
+      "model": "logistic_C10",
+      "threshold": 0.4,
+      "search": {
+        "logistic_C0.1": 0.9946218932681967,
+        "logistic_C1": 0.9952054318593715,
+        "logistic_C10": 0.9964490454337729,
+        "boost_depth1": 0.9904981264752178,
+        "boost_depth2": 0.9905356611361471
+      },
+      "metrics": {
+        "n": 65,
+        "asd": 39,
+        "tn": 24,
+        "fp": 2,
+        "fn": 6,
+        "tp": 33,
+        "accuracy": 0.8769230769230769,
+        "balanced_accuracy": 0.8846153846153846,
+        "sensitivity": 0.8461538461538461,
+        "specificity": 0.9230769230769231,
+        "auc": 0.9644970414201184,
+        "average_precision": 0.9796765753287492,
+        "brier": 0.08340439962566888
+      }
+    },
+    "ABIDEII-OHSU_1": {
+      "model": "logistic_C10",
+      "threshold": 0.25,
+      "search": {
+        "logistic_C0.1": 0.9866920518537211,
+        "logistic_C1": 0.9867904007058415,
+        "logistic_C10": 0.9882158317697527,
+        "boost_depth1": 0.9860713473291237,
+        "boost_depth2": 0.9876856852549721
+      },
+      "metrics": {
+        "n": 48,
+        "asd": 11,
+        "tn": 33,
+        "fp": 4,
+        "fn": 0,
+        "tp": 11,
+        "accuracy": 0.9166666666666666,
+        "balanced_accuracy": 0.9459459459459459,
+        "sensitivity": 1.0,
+        "specificity": 0.8918918918918919,
+        "auc": 0.9926289926289926,
+        "average_precision": 0.9805194805194806,
+        "brier": 0.06222530711894662
+      }
+    },
+    "ABIDEII-SDSU_1": {
+      "model": "logistic_C1",
+      "threshold": 0.45000000000000007,
+      "search": {
+        "logistic_C0.1": 0.9841059885215226,
+        "logistic_C1": 0.9867805034113475,
+        "logistic_C10": 0.9863730799270009,
+        "boost_depth1": 0.980608168623815,
+        "boost_depth2": 0.982122773245981
+      },
+      "metrics": {
+        "n": 25,
+        "asd": 14,
+        "tn": 11,
+        "fp": 0,
+        "fn": 0,
+        "tp": 14,
+        "accuracy": 1.0,
+        "balanced_accuracy": 1.0,
+        "sensitivity": 1.0,
+        "specificity": 1.0,
+        "auc": 1.0,
+        "average_precision": 1.0,
+        "brier": 0.002711044337522799
+      }
+    }
+  },
+  "center_interval": [
+    0.9035728006146754,
+    0.9767094801223242
+  ],
+  "primary": {
+    "n": 394,
+    "asd": 144,
+    "tn": 239,
+    "fp": 11,
+    "fn": 10,
+    "tp": 134,
+    "accuracy": 0.9467005076142132,
+    "balanced_accuracy": 0.9432777777777778,
+    "sensitivity": 0.9305555555555556,
+    "specificity": 0.956,
+    "auc": 0.9818611111111111,
+    "average_precision": 0.9774994116085489,
+    "brier": 0.03749056842527678
+  },
+  "baseline": {
+    "n": 394,
+    "asd": 144,
+    "tn": 241,
+    "fp": 9,
+    "fn": 16,
+    "tp": 128,
+    "accuracy": 0.9365482233502538,
+    "balanced_accuracy": 0.9264444444444444,
+    "sensitivity": 0.8888888888888888,
+    "specificity": 0.964,
+    "auc": 0.9833333333333333,
+    "average_precision": 0.9771559618701107,
+    "brier": 0.04335005718837049
+  },
+  "prevalence_baseline": {
+    "n": 394,
+    "asd": 144,
+    "tn": 250,
+    "fp": 0,
+    "fn": 144,
+    "tp": 0,
+    "accuracy": 0.6345177664974619,
+    "balanced_accuracy": 0.5,
+    "sensitivity": 0.0,
+    "specificity": 1.0,
+    "auc": 0.33934722222222224,
+    "average_precision": 0.29831003769800474,
+    "brier": 0.25354398192076005
+  },
+  "yale_total_only": {
+    "n": 21,
+    "asd": 10,
+    "tn": 10,
+    "fp": 1,
+    "fn": 1,
+    "tp": 9,
+    "accuracy": 0.9047619047619048,
+    "balanced_accuracy": 0.9045454545454545,
+    "sensitivity": 0.9,
+    "specificity": 0.9090909090909091,
+    "auc": 0.9727272727272727,
+    "average_precision": 0.9697979797979798,
+    "brier": 0.07113451714584923
+  },
+  "selection": {
+    "model": "logistic_C1",
+    "threshold": 0.275,
+    "search": {
+      "logistic_C0.1": 0.9872847908172181,
+      "logistic_C1": 0.9892271640703008,
+      "logistic_C10": 0.9892271640703008,
+      "boost_depth1": 0.9841004345129516,
+      "boost_depth2": 0.9851098092760978
+    }
+  },
+  "local": {
+    "rows": 0,
+    "sources": {},
+    "instruments": {},
+    "skipped": {
+      "incomplete": 0,
+      "invalid": 0
+    }
+  },
+  "family": {
+    "pairs": 0,
+    "labelled": 0,
+    "fitted": false,
+    "reason": "\u041d\u0435\u0442 \u0444\u0430\u0439\u043b\u0430 \u043d\u0435\u0437\u0430\u0432\u0438\u0441\u0438\u043c\u044b\u0445 \u043c\u0435\u0442\u043e\u043a."
+  },
+  "synthetic_rows": 200,
+  "python": "3.11.9",
+  "sklearn": "1.5.2",
+  "cohort_sha256": "6a8fe67b1d64d2a3c03bdf8fbe9fa2edff6450697824e7f34b035f65e07ab3d8"
+}
