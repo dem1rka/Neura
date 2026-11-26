@@ -1,3 +1,5 @@
+import { resolve } from 'node:path';
+process.env.NEURA_DEMO_DIR ??= resolve(process.env.INIT_CWD || process.cwd(), '../server/materials/demo');
 import { realpathSync } from "node:fs";
 import { defineConfig } from 'vitest/config';
 

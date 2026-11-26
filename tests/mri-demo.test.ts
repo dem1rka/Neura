@@ -1,3 +1,4 @@
+import { resolve } from 'node:path';
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import { gunzipSync } from "node:zlib";
@@ -11,7 +12,7 @@ afterEach(() => vi.unstubAllGlobals());
 
 describe("built-in MRI demo", () => {
   it("ships a complete 12-frame NYU series with the original TR", async () => {
-    const compressed = readFileSync(new URL(`../server/materials/demo/${functional.file}`, import.meta.url));
+    const compressed = readFileSync(resolve(process.env.NEURA_DEMO_DIR!,functional.file));
     const raw = gunzipSync(compressed);
     expect(compressed.length).toBe(functional.compressedBytes);
     expect(raw.length).toBe(functional.originalBytes);
@@ -25,7 +26,7 @@ describe("built-in MRI demo", () => {
   });
   it("ships the complete, losslessly compressed user-provided NIfTI", () => {
     const compressed = readFileSync(
-      new URL(`../server/materials/demo/${manifest.file}`, import.meta.url),
+      resolve(process.env.NEURA_DEMO_DIR!,manifest.file),
     );
     const original = gunzipSync(compressed);
     expect(compressed.length).toBe(manifest.compressedBytes);
@@ -63,7 +64,7 @@ describe("built-in MRI demo", () => {
     "accepts the demo with HTTP decoding = %s",
     async (decoded) => {
       const compressed = readFileSync(
-        new URL(`../server/materials/demo/${manifest.file}`, import.meta.url),
+        resolve(process.env.NEURA_DEMO_DIR!,manifest.file),
       );
       const bytes = decoded ? gunzipSync(compressed) : compressed;
       vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(bytes)));

@@ -1,3 +1,4 @@
+import {resolve} from 'node:path';
 import { expect, test } from './workspace';
 
 test('NYU demo renders changing frames, pauses, and switches back to structural MRI', async({page,workspace}) => {
@@ -30,7 +31,7 @@ test('NYU demo renders changing frames, pauses, and switches back to structural 
   await page.getByRole('button', { name: 'Открыть демо', exact: true }).click();
   await expect(page.getByLabel('Срез X')).toBeEnabled();
   await expect(frame).toHaveCount(0);
-  await page.getByLabel('Выберите МРТ-файлы').setInputFiles('server/materials/demo/nyu-rest-demo.nii.gz');
+  await page.getByLabel('Выберите МРТ-файлы').setInputFiles(resolve(process.env.NEURA_DEMO_DIR!,'nyu-rest-demo.nii.gz'));
   await expect(frame).toBeEnabled();
   await expect(frame).toHaveValue('0');
   expect(errors).toEqual([]);

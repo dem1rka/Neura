@@ -37,7 +37,7 @@ export function AdminPanel({self}:{self:string}) {
   const t=useT(), [rows,setRows]=useState<AccountRow[]>([]), [error,setError]=useState(''), [busy,setBusy]=useState(false);
   const [resetLink,setResetLink]=useState('');
   async function refresh(){setRows(await api<AccountRow[]>('/admin/users'));}
-  useEffect(()=>{refresh().catch(err=>setError(err.message));},[]);
+  useEffect(()=>{const update=()=>{void refresh().catch(err=>setError(err.message));};update();window.addEventListener('neura-account-created',update);return()=>window.removeEventListener('neura-account-created',update);},[]);
   async function change(work:()=>Promise<void>){setBusy(true);setError('');try{await work();await refresh();}catch(e){setError((e as Error).message);}finally{setBusy(false);}}
   return <div className="cabinet-admin">
     <InviteForm/>
@@ -48,4 +48,22 @@ export function AdminPanel({self}:{self:string}) {
       {r.role!=='admin' && !r.disabled_at && <button className="button secondary" disabled={busy} onClick={()=>void change(async()=>{const res=await api<{token:string}>('/recovery/issue',{id:r.id});setResetLink(location.origin+'/recover#'+res.token);})}>{t('Восстановление доступа')}</button>}
       {r.role!=='admin' && r.id!==self && <button disabled={busy} className="button secondary" onClick={()=>void change(async()=>{await api(`/admin/users/${r.id}/status`,{disabled:!r.disabled_at});})}>{t(r.disabled_at?'Разблокировать':'Заблокировать')}</button>}</li>)}</ul>
     </section></div>;
+}
+
+export function CreateAccount({child}:{child?:string}){
+ const t=useT(),[role,setRole]=useState<'specialist'|'patient'|'family'>(child?'family':'patient'),[busy,setBusy]=useState(false),[error,setError]=useState('');
+ const [created,setCreated]=useState<{email:string;password:string;role:Role}|null>(null);
+ async function submit(e:FormEvent<HTMLFormElement>){
+  e.preventDefault();const form=e.currentTarget,email=new FormData(form).get('email');setBusy(true);setError('');setCreated(null);
+  try{setCreated(await api('/accounts',{email,role,...(child?{child}:{})}));form.reset();window.dispatchEvent(new Event('neura-account-created'));}
+  catch(e){setError((e as Error).message);}finally{setBusy(false);}
+ }
+ return <section className="cabinet-panel"><h2>{t(child?'Создать аккаунт семьи для ребёнка':'Создать аккаунт напрямую')}</h2>
+ <form onSubmit={submit}><label>Email<input name="email" type="email" autoComplete="off" required maxLength={254}/></label>
+ {!child&&<label>{t('Тип аккаунта')}<select value={role} onChange={e=>setRole(e.target.value as typeof role)}>{(['specialist','patient','family'] as const).map(r=><option key={r} value={r}>{t(roleNames[r])}</option>)}</select></label>}
+ <button className="button" disabled={busy}>{t(busy?'Создаём…':'Создать аккаунт')}</button></form>
+ {error&&<p role="alert">{t(error)}</p>}
+ {created&&<div role="status"><p>{t('Аккаунт создан. Передайте данные для входа пользователю. Пароль показывается только сейчас.')}</p><label>Email<input readOnly value={created.email}/></label><label>{t('Пароль')}<input readOnly autoComplete="off" value={created.password} onFocus={e=>e.target.select()}/></label><p>{t(roleNames[created.role])}</p><button className="button secondary" onClick={()=>setCreated(null)}>{t('Скрыть данные для входа')}</button></div>}
+ {!child&&role==='family'&&<p>{t('Для связи с ребёнком создайте семейный аккаунт из выбранной карточки участника или отправьте приглашение существующей семье.')}</p>}
+ </section>;
 }

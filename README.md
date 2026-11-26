@@ -15,7 +15,7 @@ npm.cmd run dev
 **2. Фронтенд** — во втором окне:
 
 ```powershell
-cd "C:\Users\demir\AI sana\neura"
+cd "C:\Users\demir\AI sana\neura"c
 npm.cmd run dev -- --host localhost --port 5173 --strictPort
 ```
 

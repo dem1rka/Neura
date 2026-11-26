@@ -1,0 +1,67 @@
+import {test,expect} from './workspace';
+test('family assignment uses fixed age and saves the assigned assessment',async({page})=>{
+ const id='11111111-1111-4111-8111-111111111111',assessmentId='22222222-2222-4222-8222-222222222222';
+ let saved:any;
+ await page.route('**/api/auth/me',r=>r.fulfill({json:{id:'fixture',role:'family'}}));
+ await page.route(`**/api/assignments/${id}`,r=>r.fulfill({json:{id,version:'research-v1',kind:'questionnaire',child_mode:false,assignment_attempts:null,assessments:{participants:{label:'Тестовый участник'}},research:{schemaVersion:1,assessmentId,ageMonths:156,records:[]}}}));
+ await page.route(`**/api/assignments/${id}/research`,async r=>{saved=r.request().postDataJSON();await r.fulfill({json:{ok:true}});});
+ await page.setViewportSize({width:390,height:844});await page.goto(`/assignments/${id}`);
+ await expect(page.getByLabel('Полных лет')).toBeDisabled();await expect(page.getByLabel('Полных лет')).toHaveValue('13');
+ await page.getByLabel('У участника нет интеллектуальных').check();await page.getByLabel('Я понимаю вопросы').check();await page.getByRole('button',{name:'Начать анкету',exact:true}).click();
+ for(let i=0;i<10;i++)await page.locator(`input[name="aq-${i}"]`).first().check();
+ await page.screenshot({path:'test-results/assessment-family-mobile.png',fullPage:true});
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ await page.getByRole('button',{name:'Завершить анкету',exact:true}).click();await expect(page.getByRole('status')).toHaveText('Результат сохранён');
+ expect(saved.assessmentId).toBe(assessmentId);expect(saved.records[0].status).toBe('completed');
+});
+test('bubbles: two practice hits then a complete twenty-second recording',async({page,workspace})=>{
+ await page.clock.install();await page.goto('/game');await page.getByLabel('Полных лет').fill('8');
+ await page.clock.pauseAt(new Date(await page.evaluate(()=>Date.now()+1000)));
+ await page.getByRole('button',{name:'Начать игру',exact:true}).click();
+ const canvas=page.getByLabel('Поле с движущимися пузырьками');await expect(canvas).toBeVisible();await page.clock.runFor(2000);const box=(await canvas.boundingBox())!;
+ const hit=async(x:number,y:number)=>page.mouse.click(box.x+x*box.width/800,box.y+y*box.height/440);
+ await hit(80,338);await hit(240,408);
+ await expect(page.getByText('Записываем касания')).toBeVisible();
+ await page.clock.runFor(4000);await hit(80,198);await hit(240,198);
+ await page.clock.runFor(4000);await hit(80,198);
+ await page.screenshot({path:'test-results/bubbles-desktop.png',fullPage:true});
+ await page.clock.runFor(13500);await page.clock.resume();await expect(page.getByRole('status').filter({hasText:'Результат сохранён'})).toBeVisible();
+ const r=workspace['research-assessments-v1'].records[0];expect(r.status).toBe('completed');expect(r.durationMs).toBe(20000);expect(r.touches.length).toBeGreaterThanOrEqual(3);expect(r.touches.every((t:any)=>t.pointer==='mouse')).toBe(true);
+});
+test('AQ: complete, persist, reload and export; separate age forms',async({page,workspace})=>{
+ await page.goto('/questionnaire');await page.getByLabel('Полных лет').fill('8');
+ await page.getByLabel('У участника нет интеллектуальных').check();await page.getByLabel('Я понимаю вопросы').check();
+ await page.getByRole('button',{name:'Начать анкету',exact:true}).click();
+ for(let i=0;i<10;i++)await page.locator(`input[name="aq-${i}"]`).first().check();
+ await page.getByRole('button',{name:'Завершить анкету',exact:true}).click();
+ await expect(page.getByRole('status').filter({hasText:'Результат сохранён'})).toBeVisible();
+ expect(workspace['research-assessments-v1'].records[0].answers).toEqual(Array(10).fill(0));
+ await expect(page.locator('.protocol-score').first()).toHaveText('4 / 10');
+ await page.reload();await page.locator('summary').filter({hasText:'AQ-10 · Детская форма'}).click();
+ await expect(page.locator('.protocol-score')).toHaveText('4 / 10');
+ const download=page.waitForEvent('download');await page.getByRole('button',{name:'Скачать данные обследований'}).click();expect((await download).suggestedFilename()).toBe('neura-assessment.json');
+ await page.getByRole('button',{name:'Новое обследование',exact:true}).click();await page.getByLabel('Полных лет').fill('13');
+ await expect(page.getByRole('heading',{name:'AQ-10 Adolescent · 12–15 лет'})).toBeVisible();
+ await page.setViewportSize({width:390,height:844});await page.screenshot({path:'test-results/assessment-mobile.png',fullPage:true});
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+});
+test('GEODE: timed trial, interrupted save and no diagnosis',async({page,workspace})=>{
+ await page.goto('/game');await page.getByLabel('Полных лет').fill('13');await page.getByRole('button',{name:'Начать игру',exact:true}).click();
+ await page.getByRole('button',{name:'Начать пробу'}).click();
+ await expect(page.getByRole('button',{name:'Левая сторона'})).toBeEnabled({timeout:6000});
+ await page.getByRole('button',{name:'Левая сторона'}).click();
+ await expect(page.getByRole('button',{name:'Начать пробу'})).toBeEnabled();
+ await page.screenshot({path:'test-results/geode-desktop.png',fullPage:true});
+ await page.getByRole('button',{name:'Завершить раньше'}).click();
+ await expect(page.getByRole('status').filter({hasText:'Запись сохранена'})).toBeVisible();
+ const r=workspace['research-assessments-v1'].records[0];expect(r.status).toBe('interrupted');expect(r.trials).toHaveLength(1);expect(r.trials[0].left).toHaveLength(10);
+ await expect(page.getByText('По ним не рассчитаны диагноз',{exact:false}).first()).toBeVisible();
+});
+test('failed save keeps the result and permits retry',async({page,workspace})=>{
+ await page.goto('/questionnaire');await page.getByLabel('Полных лет').fill('12');await page.getByLabel('У участника нет интеллектуальных').check();await page.getByLabel('Я понимаю вопросы').check();await page.getByRole('button',{name:'Начать анкету',exact:true}).click();
+ for(let i=0;i<10;i++)await page.locator(`input[name="aq-${i}"]`).first().check();
+ let fail=true;
+ await page.route('**/api/participants/fixture/workspace',async route=>{if(route.request().method()==='POST'&&fail){await route.fulfill({status:503,json:{error:'offline'}});return;}if(route.request().method()==='POST'){const {key,value}=route.request().postDataJSON();workspace[key]=value;}await route.fulfill({json:{user:'fixture',values:workspace}});});
+ await page.getByRole('button',{name:'Завершить анкету',exact:true}).click();await expect(page.getByRole('button',{name:'Повторить сохранение'})).toBeVisible();
+ fail=false;await page.getByRole('button',{name:'Повторить сохранение'}).click();await expect(page.getByRole('status').filter({hasText:'Результат сохранён'})).toBeVisible();expect(workspace['research-assessments-v1'].records[0].status).toBe('completed');
+});

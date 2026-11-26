@@ -58,20 +58,12 @@ describe("translation coverage", () => {
     }
     checkDirectory(join(process.cwd(), "src"));
   });
-  it("translates game and questionnaire content while preserving persisted IDs", () => {
+  it("translates archived questionnaire content while preserving persisted IDs", () => {
     const ru = getContent((message) => message);
     for (const language of ["en", "kk"] as const) {
       const localized = getContent((message) => translate(language, message));
-      expect(localized.situations).toHaveLength(8);
       expect(localized.questions.map((q) => q.id)).toEqual(
         ru.questions.map((q) => q.id),
-      );
-      expect(localized.situations.map((s) => s.scene)).toEqual(
-        ru.situations.map((s) => s.scene),
-      );
-      expect(localized.situations[0].title).not.toEqual(ru.situations[0].title);
-      expect(localized.situations.every((s) => s.options.length === 4)).toBe(
-        true,
       );
       expect(
         localized.questions.every(

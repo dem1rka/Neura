@@ -5,19 +5,20 @@ import { Link, Navigate, useParams } from 'react-router-dom';
 import '../styles/account.css';
 import { Assign, FamilyHome, InviteForm } from './Family';
 import '../styles/cabinet.css';
-import { CabinetHero, AdminPanel, SpecialistAccess, roleNames, type Role } from './Cabinet';
-import { activeParticipant, selectParticipant, service } from '../services/storage';
-import { loadRecords } from '../features/screening/io';
+import { CabinetHero, CreateAccount, AdminPanel, SpecialistAccess, roleNames, type Role } from './Cabinet';
+import { activeParticipant, selectParticipant } from '../services/storage';
+import {Result} from '../features/assessment/Assessment';
+import type {RecordData} from '../features/assessment/protocol';
 
 type Participant = { id: string; label: string; owned:boolean };
 type Observation = { id: string; kind: string; instrument_key: string; status: string; started_at: string };
 import { api } from '../services/accountApi';
-import SrsDemo from './SrsDemo';
+
 import { LayoutDashboard, ClipboardList, Gamepad2, Scan } from 'lucide-react';
 const tools = [
   {url:'/dashboard', label:'Обзор', Icon:LayoutDashboard},
   {url:'/questionnaire', label:'Анкеты', Icon:ClipboardList},
-  {url:'/game', label:'Приключение Айко', Icon:Gamepad2},
+  {url:'/game', label:'Игры для наблюдения', Icon:Gamepad2},
   {url:'/mri', label:'Просмотр МРТ', Icon:Scan},
 ];
 export default function Account() {
@@ -33,8 +34,6 @@ export default function Account() {
   const [selected, setSelected] = useState(activeParticipant);
   const [records, setRecords] = useState<Observation[]>([]);
   const [detail, setDetail] = useState<unknown>(null);
-  const [localRecordId, setLocalRecordId] = useState('');
-  const localRecords = user ? loadRecords().filter(record => !record.demo) : [];
   const refresh = async () => {
     const next = await api<{id:string;email:string;role:Role;scope?:string}>('/auth/me');
     if(next.scope){location.replace('/assignments/'+next.scope);return;}
@@ -106,7 +105,8 @@ export default function Account() {
         <Link key={url} to={url}><span className="cabinet-tile-icon"><Icon size={21} aria-hidden/></span>
           <strong>{t(label)}</strong><ArrowUpRight className="cabinet-tile-arrow" size={15} aria-hidden/></Link>)}
     </nav>
-    {['specialist','admin'].includes(user.role) && <SrsDemo/>}
+
+    {['admin','specialist'].includes(user.role)&&<CreateAccount/>}
     {user.role === 'family' ? <FamilyHome/> : user.role === 'admin' ? <AdminPanel self={user.id}/> : <>
       <section className="cabinet-panel">
       <h2>{t("Карточки участников")} </h2>
@@ -122,44 +122,30 @@ export default function Account() {
       </select></label>
       {activeParticipant() && <p role="status">{t("Активная карточка")}: {participants.find(p => p.id === activeParticipant())?.label || activeParticipant()}</p>}
       {selected && <>
-        {user.role === "specialist" && participants.find(p=>p.id===selected)?.owned && <><InviteForm key={selected} child={selected}/><Assign id={selected}/></>}
+        {user.role === "specialist" && participants.find(p=>p.id===selected)?.owned && <><CreateAccount key={selected+'-create'} child={selected}/><InviteForm key={selected} child={selected}/><Assign id={selected}/></>}
         {participants.find(p => p.id === selected)?.owned && <SpecialistAccess key={selected} id={selected}/>}
         <button className="button" disabled={busy} onClick={() => void run(async () => {
           await selectParticipant(selected); setMessage("Изменения в играх, анкетах и истории МРТ сохраняются в выбранную карточку.");
         })}>{t("Работать с этой карточкой")}</button>
         {activeParticipant() === selected && <>
-        <h2>{t("Сохранение результатов")} </h2>
-        {(['game', 'questionnaire'] as const).map(kind => <button key={kind} className="button secondary" disabled={busy}
-          onClick={() => void run(async () => {
-            const payload = kind === 'game' ? service.game() : service.questionnaire();
-            if (!payload || !Object.keys(payload.answers).length) throw new Error("Нет локальных ответов для сохранения");
-            await api(`/participants/${selected}/observations`, { kind, instrument_key: kind === 'game' ? 'neura-game' : 'teacher',
-              instrument_version: '1', payload, status: payload.completedAt ? 'completed' : 'draft' });
-            setRecords(await api<Observation[]>(`/participants/${selected}/observations`)); setMessage("Сохранено в базе");
-          })}>{kind === 'game' ? t("Сохранить последнюю игру") : t("Сохранить анкету педагога")}</button>)}
-        <form onSubmit={event => { event.preventDefault(); void run(async () => {
-          const payload = localRecords.find(record => record.id === localRecordId);
-          if (!payload) throw new Error("Выберите локальное наблюдение");
-          await api(`/participants/${selected}/observations`, { kind: 'questionnaire', instrument_key: 'screening',
-            instrument_version: '1', language: payload.language, age_months: payload.ageMonths, payload, status: 'completed' });
-          setRecords(await api<Observation[]>(`/participants/${selected}/observations`)); setMessage("Анкета сохранена в выбранную карточку");
-        }); }}>
-          <label>{t("Локальная анкета")} <select required value={localRecordId} onChange={e => setLocalRecordId(e.target.value)}>
-            <option value="">{t("Выберите наблюдение")} </option>
-            {localRecords.map(record => <option key={record.id} value={record.id}>{record.id} · {record.date}</option>)}
-          </select></label>
-          <button className="button secondary" disabled={busy || !localRecordId}>{t("Сохранить выбранную анкету")} </button>
-        </form>
+        <h2>Результаты игр и AQ-10</h2><p>Ответы и игровые записи сохраняются автоматически в активную карточку. Откройте раздел, чтобы увидеть результаты или продолжить черновик.</p>
+        <div className="protocol-actions"><Link className="button secondary" to="/game/report">Результаты игр</Link><Link className="button secondary" to="/questionnaire/report">Результаты AQ-10</Link></div>
         </>}
         <h2>{t("История в базе")} </h2>
         {records.length === 0 ? <p>{t("Пока нет сохранённых наблюдений.")} </p> : <ul>{records.map(record => <li key={record.id}>
           <button disabled={busy} onClick={() => void run(async () => setDetail(await api(`/observations/${record.id}`)))}>
-            {record.instrument_key} · {new Date(record.started_at).toLocaleString(localeTag())} · {record.status}
+            {record.instrument_key.startsWith('research-assignment-')?(record.kind==='game'?'Игровое назначение':'Назначение AQ-10'):record.instrument_key==='research-assessments-v1'?'Игры и AQ-10':record.instrument_key.startsWith('legacy-assignment-')?'Архив прежнего назначения':record.instrument_key} · {new Date(record.started_at).toLocaleString(localeTag())} · {record.status}
           </button>
         </li>)}</ul>}
-        {detail !== null && <pre style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{JSON.stringify(detail, null, 2)}</pre>}
+        {detail !== null && <ObservationDetail value={detail}/>}
       </>}
       </section>
     </>}
   </section>;
+}
+
+function ObservationDetail({value}:{value:unknown}){
+ const payload=(value as {payload?:{schemaVersion?:number;records?:RecordData[]}})?.payload;
+ if(payload?.schemaVersion===1&&Array.isArray(payload.records))return <div className="assessment">{payload.records.length?payload.records.map(r=><Result key={r.id} record={r}/>):<p>В этом обследовании пока нет записей.</p>}</div>;
+ return <details><summary>Исходные данные записи</summary><pre style={{whiteSpace:'pre-wrap',overflowWrap:'anywhere'}}>{JSON.stringify(value,null,2)}</pre></details>;
 }

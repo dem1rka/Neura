@@ -1,5 +1,4 @@
 import { expect, test } from './workspace';
-import { party, finalItems } from '../../src/features/game/party';
 for(const width of [1440,390])test(`all redesigned routes fit at ${width}px`,async({page,workspace})=>{
  await page.setViewportSize({width,height:1000});
  await page.emulateMedia({reducedMotion:'reduce'});
@@ -9,7 +8,7 @@ for(const width of [1440,390])test(`all redesigned routes fit at ${width}px`,asy
  });
  await page.goto('/');
  workspace.questionnaire={answers:{},completedAt:'2026-10-30T10:00:00Z'};
- workspace.game={id:'design-check',mode:'party',startedAt:'2026-10-30T10:00:00Z',completedAt:'2026-10-30T10:10:00Z',answers:party.map((_,i)=>({situationId:i,choice:0,seconds:30,changes:0,help:0,actions:i===7?finalItems.map(x=>x.label):[],emotionChoice:i===3?0:undefined}))};
+
  for(const route of ['/','/dashboard','/game','/game/report','/questionnaire','/questionnaire/teacher','/questionnaire/report','/mri','/about']){
   await page.goto(route);await expect(page.locator('h1').first()).toBeVisible();
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),route).toBe(true);

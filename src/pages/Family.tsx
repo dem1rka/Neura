@@ -1,16 +1,18 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import { Link, Navigate, useLocation, useParams } from 'react-router-dom';
-import { ArrowUpRight, Check, Circle, Gamepad2, ClipboardList, Leaf } from 'lucide-react';
+import { ArrowUpRight, Gamepad2, ClipboardList } from 'lucide-react';
 import { api } from '../services/accountApi';
 import { useT } from '../i18n';
 import { PreferencesControls } from '../components/PreferencesControls';
 import { openAnalysisWorkspace } from '../services/storage';
 import '../styles/family.css';
+import {instrumentLabel} from '../features/assessment/protocol';
+import Assessment, {Result, type AssessmentState} from '../features/assessment/Assessment';
 
 type Progress={answers:number[];revision:number;completed_at:string|null};
-type Task={id:string;kind:'game'|'questionnaire';assignment_attempts:Progress|null};
+type Task={id:string;version?:string;research?:AssessmentState;kind:'game'|'questionnaire';assignment_attempts:Progress|null};
 type Child={id:string;label:string;assessments:{id:string;assignments:Task[]}[]};
-const title={game:'Игра с Айко',questionnaire:'Анкета для родителя'};
+const title={game:'Исследовательская игра',questionnaire:'Анкета AQ-10'};
 function Notice({text}:{text:string}){const t=useT();return text?<p role="status" className="family-notice">{t(text)}</p>:null;}
 
 export function PrivatePage({children}:{children:ReactNode}){
@@ -19,11 +21,12 @@ export function PrivatePage({children}:{children:ReactNode}){
  useEffect(()=>{
    let live=true;
    setResult('');
-   api<{id:string;scope?:string}>('/auth/me').then(async user=>{
+   api<{id:string;scope?:string;role?:string}>('/auth/me').then(async user=>{
      if(!live)return;
      if(user.scope && pathname!=='/assignments/'+user.scope){
        setScope(user.scope);setResult('child');return;
      }
+     if(user.role==='family'&&/^\/(?:legacy\/)?(?:game|questionnaire)(?:\/|$)/.test(pathname)){setResult('family-module');return;}
      if(!pathname.startsWith('/assignments/')) await openAnalysisWorkspace(user.id);
      if(live)setResult('ready');
    }).catch(e=>{if(live)setResult(e.status===401?'guest':'error')});
@@ -32,6 +35,7 @@ export function PrivatePage({children}:{children:ReactNode}){
  if(!result)return <p role="status">{t('Проверяем сессию…')}</p>;
  if(result==='guest')return <Navigate replace to="/account"/>;
  if(result==='child')return <Navigate replace to={'/assignments/'+scope}/>;
+ if(result==='family-module')return <FamilyModule kind={pathname.includes('questionnaire')?'questionnaire':'game'}/>;
  if(result==='error')return <div role="alert">{t('Не удалось открыть карточку участника')} <button onClick={()=>setRetry(n=>n+1)}>{t('Повторить')}</button></div>;
  return <>{children}</>;
 }
@@ -63,10 +67,11 @@ export function Assign({id}:{id:string}){
  const t=useT(),[msg,setMsg]=useState(''),[busy,setBusy]=useState(false);
  const [list,setList]=useState<{id:string;assignments:Task[]}[]>([]),[refresh,setRefresh]=useState(0);
  useEffect(()=>{let live=true;api<typeof list>('/children/'+id+'/assessments').then(r=>{if(live)setList(r)}).catch(e=>{if(live)setMsg(e.message)});return()=>{live=false}},[id,refresh]);
- return <section className="family-box"><h3>{t('Новое обследование')}</h3><form onSubmit={async e=>{e.preventDefault();const kinds=new FormData(e.currentTarget).getAll('kind');if(!kinds.length){setMsg('Выберите задание');return}setBusy(true);
- try{await api('/children/'+id+'/assessments',{kinds});setMsg('Назначение сохранено');setRefresh(n=>n+1)}catch(e){setMsg((e as Error).message)}finally{setBusy(false)}}}>
+ return <section className="family-box"><h3>{t('Новое обследование')}</h3><form onSubmit={async e=>{e.preventDefault();const form=new FormData(e.currentTarget);const ageMonths=Number(form.get('age'))*12;const kinds=form.getAll('kind');if(!kinds.length){setMsg('Выберите задание');return}setBusy(true);
+ try{await api('/children/'+id+'/assessments',{kinds,ageMonths,sex:form.get('sex')});setMsg('Назначение сохранено');setRefresh(n=>n+1)}catch(e){setMsg((e as Error).message)}finally{setBusy(false)}}}>
+ <label>Полных лет<input name="age" type="number" min="4" max="17" step="1" required/></label><label>{t('Пол пациента')}<select name="sex"><option value="unspecified">{t('Не указан')}</option><option value="male">{t('Мужской')}</option><option value="female">{t('Женский')}</option></select></label>
  {(['questionnaire','game'] as const).map(k=><label key={k}><input name="kind" type="checkbox" defaultChecked value={k}/>{t(title[k])}</label>)}
- <button disabled={busy}>{t('Назначить')}</button></form>{list.map(a=><div key={a.id}>{a.assignments.map(task=><p key={task.id}>{t(title[task.kind])} · {task.assignment_attempts?.revision??0}/3</p>)}</div>)}<Notice text={msg}/></section>;
+ <button disabled={busy}>{t('Назначить')}</button></form>{list.map(a=><div key={a.id}>{a.assignments.map(task=><p key={task.id}>{t(title[task.kind])} · {task.version==='research-v1'?(task.assignment_attempts?.completed_at?'Завершено':'В процессе'):'Прежняя версия · требуется обновление'}</p>)}{a.assignments.flatMap(task=>task.research?.records??[]).map(r=><details key={r.id}><summary>{instrumentLabel(r)} · {r.status==='completed'?'Завершено':r.status==='draft'?'Черновик':'Прервано'}</summary><Result record={r}/></details>)}</div>)}<Notice text={msg}/></section>;
 }
 
 export function FamilyHome(){
@@ -76,28 +81,30 @@ export function FamilyHome(){
  return <div className="family-box"><h2>{t('Мои дети')}</h2><div className="family-tabs">
  {children?.map(c=><button key={c.id} aria-pressed={c.id===child?.id} onClick={()=>setId(c.id)}>{c.label}</button>)}</div>
  {child&&<h3>{t('Задания')} · {child.label}</h3>}{children&&!tasks.length&&<p>{t('Назначений пока нет')}</p>}
- {tasks.map(a=><Link className="family-row" key={a.id} to={'/assignments/'+a.id}>{a.kind==='game'?<Gamepad2/>:<ClipboardList/>}<span><strong>{t(title[a.kind])}</strong><small>{t(a.assignment_attempts?.completed_at?'Завершено':a.assignment_attempts?'Продолжить':'Начать')}</small></span><ArrowUpRight/></Link>)}<Notice text={msg}/></div>;
+ {tasks.map(a=><Link className="family-row" key={a.id} to={'/assignments/'+a.id}>{a.kind==='game'?<Gamepad2/>:<ClipboardList/>}<span><strong>{t(title[a.kind])}</strong><small>{t(a.version!=='research-v1'?'Обновить задание':a.assignment_attempts?.completed_at?'Завершено':a.assignment_attempts?'Продолжить':'Начать')}</small></span><ArrowUpRight/></Link>)}<Notice text={msg}/></div>;
 }
-const game=[
- ['Айко пришёл на праздник. Как он поздоровается?','Помашет рукой','Скажет «привет»','Подойдёт позже'],
- ['Друг уронил карандаши. Что сделает Айко?','Поможет собрать','Позовёт взрослого','Спросит друга'],
- ['Пора выбрать занятие. Что выберет Айко?','Рисовать','Собрать конструктор','Поиграть вместе']
-];
-const questions=['Ребёнок сам начинает общение?','Ребёнок просит о помощи во время игры?','Ребёнок присоединяется к совместной игре?'];
 export function Assignment(){
  const {id}=useParams(),t=useT(),[task,setTask]=useState<(Task&{child_mode:boolean;assessments:{participants:{label:string}}})|null>(null),[msg,setMsg]=useState(''),[busy,setBusy]=useState(false);
+ const [age,setAge]=useState('');
  useEffect(()=>{let live=true;api<NonNullable<typeof task>>('/assignments/'+id).then(v=>{if(live)setTask(v)}).catch(e=>{if(live)setMsg(e.message)});return()=>{live=false}},[id]);
- const attempt=task?.assignment_attempts,step=attempt?.revision??0,done=!!attempt?.completed_at,isGame=task?.kind==='game';
- async function answer(index:number){if(!task||busy)return;setBusy(true);setMsg('');try{
- const data=await api<Progress>('/assignments/'+id+'/steps',{revision:step,answer:index});setTask({...task,assignment_attempts:data});
- }catch(e){setMsg((e as Error).message);try{setTask(await api('/assignments/'+id))}catch{/* keep current answer for retry */}}finally{setBusy(false)}}
+ const done=!!task?.assignment_attempts?.completed_at,isGame=task?.kind==='game';
  async function enter(){if(!task||busy)return;setBusy(true);try{await api('/assignments/'+id+'/enter',{});localStorage.setItem('neura.session-change',String(Date.now()));location.reload()}catch(e){setMsg((e as Error).message);setBusy(false)}}
  async function leave(){await api('/auth/logout',{});location.replace('/account')}
- return <main className="family-shell"><div className="family-top">{task?.child_mode?<button onClick={()=>void leave().catch(e=>setMsg(e.message))}>{t('Вход для родителя')}</button>:<Link to="/account">{t('Личный кабинет')}</Link>}<PreferencesControls/></div>
+ async function upgrade(e:FormEvent){e.preventDefault();setBusy(true);setMsg('');try{await api('/assignments/'+id+'/upgrade',{ageMonths:Number(age)*12});setTask(await api('/assignments/'+id));}catch(e){setMsg((e as Error).message);}finally{setBusy(false);}}
+ return <main className="family-shell assignment-shell"><div className="family-top">{task?.child_mode?<button onClick={()=>void leave().catch(e=>setMsg(e.message))}>{t('Вход для родителя')}</button>:<Link to="/account">{t('Личный кабинет')}</Link>}<PreferencesControls/></div>
+ {!task&&!msg&&<p role="status">Загружаем задание…</p>}
  {task&&<section className="family-box child-task"><small>{task.assessments.participants.label} · {t(title[task.kind])}</small>
- {done?<><Check/><h1>{t('Задание завершено')}</h1><p>{t('Ответы отправлены специалисту.')}</p>{!task.child_mode&&<Link to="/account">{t('Мои дети')}</Link>}</>:isGame&&!task.child_mode?<><h1>{t('Детский режим')}</h1><p>{t('После игры для открытия семейного кабинета потребуется пароль родителя.')}</p><button disabled={busy} onClick={()=>void enter()}>{t('Начать игру')}</button></>:<>
- <div className="family-progress" aria-label={step+1+' / 3'}>{[0,1,2].map(i=><i key={i} data-active={i<=step}/>)}</div>
- <div key={step} className="task-step">{isGame?<Leaf/>:<Circle/>}<h1>{t(isGame?game[step][0]:questions[step])}</h1>
- <div className="answer-grid">{(isGame?game[step].slice(1):['Часто','Иногда','Пока не наблюдали']).map((a,i)=><button disabled={busy} key={a} onClick={()=>void answer(i)}>{t(a)}</button>)}</div></div></>}
+ {task.version!=='research-v1'?<><h1>Обновление методики</h1><p>Это назначение создано для прежнего модуля. Для перехода к текущим играм и AQ-10 укажите возраст участника. Обновятся игра и анкета этого обследования; старые ответы сохранятся отдельно.</p>{task.child_mode?<p>Для обновления войдите в кабинет родителя.</p>:<form onSubmit={upgrade}><label>Полных лет<input type="number" min="4" max="17" step="1" required value={age} onChange={e=>setAge(e.target.value)}/></label><button disabled={busy}>Обновить задания</button></form>}</>
+ :!task.research?<p role="alert">Не найдены параметры обследования. Обратитесь к назначившему задание специалисту.</p>
+ :isGame&&!task.child_mode&&!done?<><h1>{task.research.ageMonths<132?'Пузырьки · 4–10 лет':'GEODE · 11–17 лет'}</h1><p>Та же методика, что и в разделе «Игры». Возраст назначен специалистом: {Math.floor(task.research.ageMonths/12)} лет.</p><p>{t('После игры для открытия семейного кабинета потребуется пароль родителя.')}</p><button disabled={busy} onClick={()=>void enter()}>{t('Начать игру')}</button></>
+ :<Assessment key={task.id+task.version} kind={task.kind} initial={task.research} assigned save={async state=>{await api('/assignments/'+id+'/research',state);return true;}}/>}
  </section>}<Notice text={msg}/></main>;
+}
+
+function FamilyModule({kind}:{kind:'game'|'questionnaire'}) {
+ const [children,setChildren]=useState<Child[]|null>(null),[error,setError]=useState('');
+ useEffect(()=>{let live=true;api<Child[]>('/family/children').then(data=>{if(live)setChildren(data)}).catch(e=>{if(live)setError(e.message)});return()=>{live=false}},[]);
+ const tasks=children?.flatMap(child=>{const task=child.assessments.flatMap(a=>a.assignments).find(a=>a.kind===kind);return task?[{child,task}]:[]})??[];
+ if(tasks.length===1)return <Navigate replace to={'/assignments/'+tasks[0].task.id}/>;
+ return <section className="family-box"><h1>{title[kind]}</h1>{error?<p role="alert">{error}</p>:!children?<p role="status">Загружаем назначения…</p>:tasks.length?<><p>Выберите участника. Здесь открываются те же назначения, что и в личном кабинете.</p>{tasks.map(({child,task})=><Link className="family-row" key={task.id} to={'/assignments/'+task.id}>{child.label}<ArrowUpRight/></Link>)}</>:<p>Назначений пока нет. Попросите специалиста назначить обследование.</p>}<Link to="/account">Личный кабинет</Link></section>;
 }

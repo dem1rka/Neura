@@ -37,7 +37,7 @@ export default function Questionnaire() {
           {t("Ваш опыт помогает дополнить картину повседневного поведения.")}
         </p>
         <div className="actions">
-          <Link className="button" to="/questionnaire/report">
+          <Link className="button" to="/legacy/questionnaire/report">
             {t("Посмотреть отчёт")}
             <ArrowRight size={18} />
           </Link>

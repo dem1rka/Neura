@@ -23,10 +23,12 @@ import {
 } from "recharts";
 import { Card, Heading, Disclaimer } from "../components/UI";
 import { Scene } from "../components/Scene";
+import {read} from "../services/storage";
+import {assessmentKey, type AssessmentState} from "../features/assessment/Assessment";
 import { service } from "../services/storage";
 import { getContent } from "../data/content";
 import type { Observation } from "../types";
-import { loadRecords } from "../features/screening/io";
+import {instrumentLabel} from "../features/assessment/protocol";
 export default function Dashboard() {
   const t = useT();
   const { demoActivity } = getContent(t);
@@ -57,41 +59,12 @@ export default function Dashboard() {
         {t("Загружаем пространство наблюдений…")}
       </div>
     );
-  const screening = loadRecords().filter((r) => !r.demo);
-  const g = Number(!!data.game?.completedAt),
-    q = Number(!!data.questionnaire.completedAt) + screening.length,
+  const research=read<AssessmentState | null>(assessmentKey,null)?.records.filter(r=>r.status==='completed')??[];
+  const g = research.filter(r=>r.kind==='game').length,
+    q = research.filter(r=>r.kind==='questionnaire').length,
     m = data.mri.filter((entry) => !entry.simulated).length;
   const local: Observation[] = [
-    ...screening.map((record) => ({
-      id: `screening-${record.id}`,
-      title: t("Наблюдение: {0}", { 0: record.id }),
-      kind: "questionnaire" as const,
-      date: record.date,
-      demo: false,
-      href: `/questionnaire?record=${encodeURIComponent(record.id)}`,
-    })),
-    ...(g
-      ? [
-          {
-            id: "local-game",
-            title: t("Ваше игровое наблюдение"),
-            kind: "game" as const,
-            date: data.game!.completedAt!,
-            demo: false,
-          },
-        ]
-      : []),
-    ...(data.questionnaire.completedAt
-      ? [
-          {
-            id: "local-q",
-            title: t("Ваша анкета педагога"),
-            kind: "questionnaire" as const,
-            date: data.questionnaire.completedAt!,
-            demo: false,
-          },
-        ]
-      : []),
+    ...research.map(r=>({id:r.id,title:instrumentLabel(r),kind:r.kind,date:r.completedAt!,demo:false,href:`/${r.kind}/report?record=${r.id}`})),
     ...data.mri.map((v) => ({
       id: v.id,
       title: v.simulated
@@ -146,7 +119,7 @@ export default function Dashboard() {
           <Scene compact />
           <span className="art-note">
             <span className="status-dot" />
-            {t("Привет! Я Айко")}
+            {t("Наблюдаем и исследуем")}
           </span>
         </div>
       </div>
@@ -164,10 +137,10 @@ export default function Dashboard() {
             value: 0 + g,
             icon: Gamepad2,
             tone: "purple",
-            note: t("8 ситуаций в каждой игре"),
+            note: t("Пузырьки и GEODE"),
           },
           {
-            label: t("Анкеты и скрининг"),
+            label: t("Анкета AQ-10"),
             value: 0 + q,
             icon: ClipboardList,
             tone: "teal",
@@ -200,26 +173,26 @@ export default function Dashboard() {
       <div className="modules-grid">
         {[
           {
-            title: t("Приключение Айко"),
+            title: t("Игры для наблюдения"),
             label: t("ИГРОВОЕ НАБЛЮДЕНИЕ"),
             text: t(
-              "Знакомые ситуации, маленькие открытия и бережное наблюдение в игре.",
+              "Пузырьки для 4–10 лет и GEODE для 11–17 лет: действия, время и отдельные результаты.",
             ),
             to: "/game",
             icon: Gamepad2,
             tone: "blue",
-            foot: t("7–8 лет · 10–15 минут"),
+            foot: t("4–17 лет · два задания"),
           },
           {
-            title: t("Анкеты и скрининг"),
+            title: t("Анкета AQ-10"),
             label: t("АНКЕТИРОВАНИЕ"),
             text: t(
-              "Структурируйте наблюдения за общением, гибкостью и повседневным поведением.",
+              "Возрастные формы AQ-10 с подсчётом баллов и пояснением для специалиста.",
             ),
             to: "/questionnaire",
             icon: ClipboardList,
             tone: "teal",
-            foot: t("RU / ҚАЗ · анкеты и импорт"),
+            foot: t("10 вопросов · RU / ҚАЗ / EN"),
           },
           {
             title: t("Исследовать глубже"),

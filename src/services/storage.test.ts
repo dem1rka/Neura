@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { read, write, service, summarize, selectParticipant } from "./storage";
-import { situations, questions } from "../data/content";
+import { questions } from "../data/content";
 beforeEach(async () => {
   vi.stubGlobal("sessionStorage",{setItem:vi.fn(),removeItem:vi.fn()});
   vi.stubGlobal("fetch",vi.fn().mockResolvedValue({ok:true,json:async()=>({user:"test",values:{}})}));
@@ -79,11 +79,6 @@ describe("local observation service", () => {
   });
 });
 describe("content coverage", () => {
-  it("provides eight four-option situations across five areas", () => {
-    expect(situations).toHaveLength(8);
-    expect(situations.every((s) => s.options.length === 4)).toBe(true);
-    expect(new Set(situations.map((s) => s.area)).size).toBe(5);
-  });
   it("provides two questions in each category", () => {
     expect(questions).toHaveLength(10);
     for (let i = 0; i < 5; i++)

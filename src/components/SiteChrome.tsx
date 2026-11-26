@@ -6,7 +6,7 @@ import { useT } from '../i18n';
 export function Logo(){const t=useT();return <Link className="logo lab-logo" to="/" aria-label={t("Neura — главная")}><span className="logo-icon"><Command size={23}/></span><span>NEURA<span className="logo-dot">.</span></span></Link>;}
 export function SiteHeader(){
  const t=useT();const {pathname}=useLocation();const [open,setOpen]=useState(false);const [scrolled,setScrolled]=useState(false);const dialog=useRef<HTMLDialogElement>(null);const toggle=useRef<HTMLButtonElement>(null);
- const links=[['/','Главная'],['/account','Личный кабинет'],['/dashboard','Обзор'],['/game','Приключение Айко'],['/questionnaire','Анкеты и скрининг'],['/mri','Просмотр МРТ'],['/evidence','Научная основа'],['/about','О проекте']];
+ const links=[['/','Главная'],['/account','Личный кабинет'],['/dashboard','Обзор'],['/game','Игры для наблюдения'],['/questionnaire','Анкета AQ-10'],['/mri','Просмотр МРТ'],['/evidence','Научная основа'],['/about','О проекте']];
  useEffect(()=>{const update=()=>setScrolled(window.scrollY>100);update();window.addEventListener('scroll',update,{passive:true});return()=>window.removeEventListener('scroll',update);},[]);
  useEffect(()=>{setOpen(false);},[pathname]);
  useEffect(()=>{const d=dialog.current;if(!d)return;if(open){d.showModal();const previous=document.body.style.overflow;document.body.style.overflow='hidden';return()=>{document.body.style.overflow=previous;d.close();};}else d.close();},[open]);

@@ -8,11 +8,7 @@ import Dashboard from "./pages/Dashboard";
 import Account from "./pages/Account";
 import About from "./pages/About";
 import Evidence from "./pages/Evidence";
-import Game from "./features/game/Game";
-import GameReport from "./features/game/GameReport";
-import Questionnaire from "./features/questionnaire/Questionnaire";
-import QuestionnaireReport from "./features/questionnaire/QuestionnaireReport";
-import Screening from "./features/screening/Screening";
+import Assessment from "./features/assessment/Assessment";
 import { Empty } from "./components/UI";
 import "./styles/index.css";
 import { PageMotion } from "./components/SiteChrome";
@@ -60,13 +56,17 @@ function App() {
           <Route path="/account/:area?" element={<Account />} />
           <Route element={<PrivatePage key={pathname}><Outlet/></PrivatePage>}>
           <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/game" element={<Game />} />
-          <Route path="/game/report" element={<GameReport />} />
-          <Route path="/questionnaire" element={<Screening />} />
-          <Route path="/questionnaire/teacher" element={<Questionnaire />} />
+          <Route path="/game" element={<Assessment kind="game" />} />
+          <Route path="/legacy/game" element={<Navigate replace to="/game" />} />
+          <Route path="/game/report" element={<Assessment kind="game" />} />
+          <Route path="/legacy/game/report" element={<Navigate replace to="/game/report" />} />
+          <Route path="/questionnaire" element={<Assessment kind="questionnaire" />} />
+          <Route path="/legacy/questionnaire" element={<Navigate replace to="/questionnaire" />} />
+          <Route path="/questionnaire/teacher" element={<Navigate replace to="/questionnaire" />} />
+          <Route path="/legacy/questionnaire/report" element={<Assessment kind="questionnaire" />} />
           <Route
             path="/questionnaire/report"
-            element={<QuestionnaireReport />}
+            element={<Assessment kind="questionnaire" />}
           />
           <Route
             path="/mri"
