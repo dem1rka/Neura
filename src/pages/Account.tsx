@@ -128,13 +128,13 @@ export default function Account() {
           await selectParticipant(selected); setMessage("Изменения в играх, анкетах и истории МРТ сохраняются в выбранную карточку.");
         })}>{t("Работать с этой карточкой")}</button>
         {activeParticipant() === selected && <>
-        <h2>Результаты игр и AQ-10</h2><p>Ответы и игровые записи сохраняются автоматически в активную карточку. Откройте раздел, чтобы увидеть результаты или продолжить черновик.</p>
-        <div className="protocol-actions"><Link className="button secondary" to="/game/report">Результаты игр</Link><Link className="button secondary" to="/questionnaire/report">Результаты AQ-10</Link></div>
+        <h2>{t("Результаты игр и AQ-10")}</h2><p>{t("Ответы и игровые записи сохраняются автоматически в активную карточку. Откройте раздел, чтобы увидеть результаты или продолжить черновик.")}</p>
+        <div className="protocol-actions"><Link className="button secondary" to="/game/report">{t("Результаты игр")}</Link><Link className="button secondary" to="/questionnaire/report">{t("Результаты AQ-10")}</Link></div>
         </>}
         <h2>{t("История в базе")} </h2>
         {records.length === 0 ? <p>{t("Пока нет сохранённых наблюдений.")} </p> : <ul>{records.map(record => <li key={record.id}>
           <button disabled={busy} onClick={() => void run(async () => setDetail(await api(`/observations/${record.id}`)))}>
-            {record.instrument_key.startsWith('research-assignment-')?(record.kind==='game'?'Игровое назначение':'Назначение AQ-10'):record.instrument_key==='research-assessments-v1'?'Игры и AQ-10':record.instrument_key.startsWith('legacy-assignment-')?'Архив прежнего назначения':record.instrument_key} · {new Date(record.started_at).toLocaleString(localeTag())} · {record.status}
+            {record.instrument_key.startsWith('research-assignment-')?(record.kind==='game'?t('Игровое назначение'):t('Назначение AQ-10')):record.instrument_key==='research-assessments-v1'?t('Игры и AQ-10'):record.instrument_key.startsWith('legacy-assignment-')?t('Архив прежнего назначения'):record.instrument_key} · {new Date(record.started_at).toLocaleString(localeTag())} · {record.status}
           </button>
         </li>)}</ul>}
         {detail !== null && <ObservationDetail value={detail}/>}
@@ -145,7 +145,8 @@ export default function Account() {
 }
 
 function ObservationDetail({value}:{value:unknown}){
+ const t=useT();
  const payload=(value as {payload?:{schemaVersion?:number;records?:RecordData[]}})?.payload;
- if(payload?.schemaVersion===1&&Array.isArray(payload.records))return <div className="assessment">{payload.records.length?payload.records.map(r=><Result key={r.id} record={r}/>):<p>В этом обследовании пока нет записей.</p>}</div>;
- return <details><summary>Исходные данные записи</summary><pre style={{whiteSpace:'pre-wrap',overflowWrap:'anywhere'}}>{JSON.stringify(value,null,2)}</pre></details>;
+ if(payload?.schemaVersion===1&&Array.isArray(payload.records))return <div className="assessment">{payload.records.length?payload.records.map(r=><Result key={r.id} record={r}/>):<p>{t("В этом обследовании пока нет записей.")}</p>}</div>;
+ return <details><summary>{t("Исходные данные записи")}</summary><pre style={{whiteSpace:'pre-wrap',overflowWrap:'anywhere'}}>{JSON.stringify(value,null,2)}</pre></details>;
 }

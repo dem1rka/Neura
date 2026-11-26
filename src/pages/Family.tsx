@@ -45,7 +45,7 @@ export function InviteForm({child}:{child?:string}){
  async function issue(e:FormEvent<HTMLFormElement>){e.preventDefault();const email=new FormData(e.currentTarget).get('email');setBusy(true);setMsg('');setUrl('');
  try{const r=await api<{token:string}>('/invitations',{email,role:child?'family':role,child});setUrl(location.origin+'/invite#'+r.token);}
  catch(e){setMsg((e as Error).message)}finally{setBusy(false)}}
- return <section className="family-box"><h3>{t(child?'Пригласить семью':'Приглашение в Neura')}</h3><form onSubmit={issue}>
+ return <section className="family-box"><h3>{t(child?t('Пригласить семью'):t('Приглашение в Neura'))}</h3><form onSubmit={issue}>
  {!child&&<label>{t('Тип аккаунта')}<select value={role} onChange={e=>setRole(e.target.value)}><option value="specialist">{t('Специалист')}</option><option value="patient">{t('Пациент')}</option></select></label>}
  <label>Email<input required name="email" type="email"/></label><button disabled={busy}>{t('Создать приглашение')}</button></form>
  {url&&<label>{t('Личная ссылка · действует 48 часов')}<input readOnly value={url} onFocus={e=>e.target.select()}/></label>}<Notice text={msg}/></section>;
@@ -57,9 +57,9 @@ export function AcceptInvite({recovery=false}:{recovery?:boolean}){
  await api(recovery?'/recovery/accept':'/invitations/accept',{token:location.hash.slice(1),password:new FormData(e.currentTarget).get('password')});
  history.replaceState(null,'',recovery?'/recover':'/invite');setDone(true);
  }catch(e){setMsg((e as Error).message)}finally{setBusy(false)}}
- return <main className="family-shell"><PreferencesControls/><section className="family-box"><h1>{t(recovery?'Восстановление доступа':'Приглашение в Neura')}</h1>
+ return <main className="family-shell"><PreferencesControls/><section className="family-box"><h1>{t(recovery?t('Восстановление доступа'):t('Приглашение в Neura'))}</h1>
  {done?<Link to="/account">{t('Войти в кабинет')}</Link>:<form onSubmit={submit}><p>{recovery?t('Сохранить пароль'):t('Для нового аккаунта придумайте пароль. Для добавления ребёнка в существующий кабинет введите текущий пароль.')}</p>
- <label>{t('Пароль')}<input name="password" type="password" minLength={12} maxLength={128} required/></label><button disabled={busy}>{t(recovery?'Сохранить пароль':'Принять приглашение')}</button></form>}
+ <label>{t('Пароль')}<input name="password" type="password" minLength={12} maxLength={128} required/></label><button disabled={busy}>{t(recovery?t('Сохранить пароль'):t('Принять приглашение'))}</button></form>}
  <Notice text={msg}/></section></main>;
 }
 
@@ -69,9 +69,9 @@ export function Assign({id}:{id:string}){
  useEffect(()=>{let live=true;api<typeof list>('/children/'+id+'/assessments').then(r=>{if(live)setList(r)}).catch(e=>{if(live)setMsg(e.message)});return()=>{live=false}},[id,refresh]);
  return <section className="family-box"><h3>{t('Новое обследование')}</h3><form onSubmit={async e=>{e.preventDefault();const form=new FormData(e.currentTarget);const ageMonths=Number(form.get('age'))*12;const kinds=form.getAll('kind');if(!kinds.length){setMsg('Выберите задание');return}setBusy(true);
  try{await api('/children/'+id+'/assessments',{kinds,ageMonths,sex:form.get('sex')});setMsg('Назначение сохранено');setRefresh(n=>n+1)}catch(e){setMsg((e as Error).message)}finally{setBusy(false)}}}>
- <label>Полных лет<input name="age" type="number" min="4" max="17" step="1" required/></label><label>{t('Пол пациента')}<select name="sex"><option value="unspecified">{t('Не указан')}</option><option value="male">{t('Мужской')}</option><option value="female">{t('Женский')}</option></select></label>
+ <label>{t("Полных лет")}<input name="age" type="number" min="4" max="17" step="1" required/></label><label>{t('Пол пациента')}<select name="sex"><option value="unspecified">{t('Не указан')}</option><option value="male">{t('Мужской')}</option><option value="female">{t('Женский')}</option></select></label>
  {(['questionnaire','game'] as const).map(k=><label key={k}><input name="kind" type="checkbox" defaultChecked value={k}/>{t(title[k])}</label>)}
- <button disabled={busy}>{t('Назначить')}</button></form>{list.map(a=><div key={a.id}>{a.assignments.map(task=><p key={task.id}>{t(title[task.kind])} · {task.version==='research-v1'?(task.assignment_attempts?.completed_at?'Завершено':'В процессе'):'Прежняя версия · требуется обновление'}</p>)}{a.assignments.flatMap(task=>task.research?.records??[]).map(r=><details key={r.id}><summary>{instrumentLabel(r)} · {r.status==='completed'?'Завершено':r.status==='draft'?'Черновик':'Прервано'}</summary><Result record={r}/></details>)}</div>)}<Notice text={msg}/></section>;
+ <button disabled={busy}>{t('Назначить')}</button></form>{list.map(a=><div key={a.id}>{a.assignments.map(task=><p key={task.id}>{t(title[task.kind])} · {task.version==='research-v1'?(task.assignment_attempts?.completed_at?t('Завершено'):t('В процессе')):t('Прежняя версия · требуется обновление')}</p>)}{a.assignments.flatMap(task=>task.research?.records??[]).map(r=><details key={r.id}><summary>{t(instrumentLabel(r))} · {r.status==='completed'?t('Завершено'):r.status==='draft'?t('Черновик'):t('Прервано')}</summary><Result record={r}/></details>)}</div>)}<Notice text={msg}/></section>;
 }
 
 export function FamilyHome(){
@@ -81,7 +81,7 @@ export function FamilyHome(){
  return <div className="family-box"><h2>{t('Мои дети')}</h2><div className="family-tabs">
  {children?.map(c=><button key={c.id} aria-pressed={c.id===child?.id} onClick={()=>setId(c.id)}>{c.label}</button>)}</div>
  {child&&<h3>{t('Задания')} · {child.label}</h3>}{children&&!tasks.length&&<p>{t('Назначений пока нет')}</p>}
- {tasks.map(a=><Link className="family-row" key={a.id} to={'/assignments/'+a.id}>{a.kind==='game'?<Gamepad2/>:<ClipboardList/>}<span><strong>{t(title[a.kind])}</strong><small>{t(a.version!=='research-v1'?'Обновить задание':a.assignment_attempts?.completed_at?'Завершено':a.assignment_attempts?'Продолжить':'Начать')}</small></span><ArrowUpRight/></Link>)}<Notice text={msg}/></div>;
+ {tasks.map(a=><Link className="family-row" key={a.id} to={'/assignments/'+a.id}>{a.kind==='game'?<Gamepad2/>:<ClipboardList/>}<span><strong>{t(title[a.kind])}</strong><small>{t(a.version!=='research-v1'?t('Обновить задание'):a.assignment_attempts?.completed_at?t('Завершено'):a.assignment_attempts?t('Продолжить'):t('Начать'))}</small></span><ArrowUpRight/></Link>)}<Notice text={msg}/></div>;
 }
 export function Assignment(){
  const {id}=useParams(),t=useT(),[task,setTask]=useState<(Task&{child_mode:boolean;assessments:{participants:{label:string}}})|null>(null),[msg,setMsg]=useState(''),[busy,setBusy]=useState(false);
@@ -92,19 +92,20 @@ export function Assignment(){
  async function leave(){await api('/auth/logout',{});location.replace('/account')}
  async function upgrade(e:FormEvent){e.preventDefault();setBusy(true);setMsg('');try{await api('/assignments/'+id+'/upgrade',{ageMonths:Number(age)*12});setTask(await api('/assignments/'+id));}catch(e){setMsg((e as Error).message);}finally{setBusy(false);}}
  return <main className="family-shell assignment-shell"><div className="family-top">{task?.child_mode?<button onClick={()=>void leave().catch(e=>setMsg(e.message))}>{t('Вход для родителя')}</button>:<Link to="/account">{t('Личный кабинет')}</Link>}<PreferencesControls/></div>
- {!task&&!msg&&<p role="status">Загружаем задание…</p>}
+ {!task&&!msg&&<p role="status">{t("Загружаем задание…")}</p>}
  {task&&<section className="family-box child-task"><small>{task.assessments.participants.label} · {t(title[task.kind])}</small>
- {task.version!=='research-v1'?<><h1>Обновление методики</h1><p>Это назначение создано для прежнего модуля. Для перехода к текущим играм и AQ-10 укажите возраст участника. Обновятся игра и анкета этого обследования; старые ответы сохранятся отдельно.</p>{task.child_mode?<p>Для обновления войдите в кабинет родителя.</p>:<form onSubmit={upgrade}><label>Полных лет<input type="number" min="4" max="17" step="1" required value={age} onChange={e=>setAge(e.target.value)}/></label><button disabled={busy}>Обновить задания</button></form>}</>
- :!task.research?<p role="alert">Не найдены параметры обследования. Обратитесь к назначившему задание специалисту.</p>
- :isGame&&!task.child_mode&&!done?<><h1>{task.research.ageMonths<132?'Пузырьки · 4–10 лет':'GEODE · 11–17 лет'}</h1><p>Та же методика, что и в разделе «Игры». Возраст назначен специалистом: {Math.floor(task.research.ageMonths/12)} лет.</p><p>{t('После игры для открытия семейного кабинета потребуется пароль родителя.')}</p><button disabled={busy} onClick={()=>void enter()}>{t('Начать игру')}</button></>
+ {task.version!=='research-v1'?<><h1>{t("Обновление методики")}</h1><p>{t('Это назначение создано для прежнего модуля. Для перехода к текущим играм и AQ-10 укажите возраст участника. Обновятся игра и анкета этого обследования; старые ответы сохранятся отдельно.')}</p>{task.child_mode?<p>{t("Для обновления войдите в кабинет родителя.")}</p>:<form onSubmit={upgrade}><label>{t("Полных лет")}<input type="number" min="4" max="17" step="1" required value={age} onChange={e=>setAge(e.target.value)}/></label><button disabled={busy}>{t("Обновить задания")}</button></form>}</>
+ :!task.research?<p role="alert">{t("Не найдены параметры обследования. Обратитесь к назначившему задание специалисту.")}</p>
+ :isGame&&!task.child_mode&&!done?<><h1>{task.research.ageMonths<132?t('Пузырьки · 4–10 лет'):t('GEODE · 11–17 лет')}</h1><p>{t('Возраст назначен специалистом: {0}',{0:Math.floor(task.research.ageMonths/12)})}</p><p>{t('После игры для открытия семейного кабинета потребуется пароль родителя.')}</p><button disabled={busy} onClick={()=>void enter()}>{t('Начать игру')}</button></>
  :<Assessment key={task.id+task.version} kind={task.kind} initial={task.research} assigned save={async state=>{await api('/assignments/'+id+'/research',state);return true;}}/>}
  </section>}<Notice text={msg}/></main>;
 }
 
 function FamilyModule({kind}:{kind:'game'|'questionnaire'}) {
+ const t=useT();
  const [children,setChildren]=useState<Child[]|null>(null),[error,setError]=useState('');
  useEffect(()=>{let live=true;api<Child[]>('/family/children').then(data=>{if(live)setChildren(data)}).catch(e=>{if(live)setError(e.message)});return()=>{live=false}},[]);
  const tasks=children?.flatMap(child=>{const task=child.assessments.flatMap(a=>a.assignments).find(a=>a.kind===kind);return task?[{child,task}]:[]})??[];
  if(tasks.length===1)return <Navigate replace to={'/assignments/'+tasks[0].task.id}/>;
- return <section className="family-box"><h1>{title[kind]}</h1>{error?<p role="alert">{error}</p>:!children?<p role="status">Загружаем назначения…</p>:tasks.length?<><p>Выберите участника. Здесь открываются те же назначения, что и в личном кабинете.</p>{tasks.map(({child,task})=><Link className="family-row" key={task.id} to={'/assignments/'+task.id}>{child.label}<ArrowUpRight/></Link>)}</>:<p>Назначений пока нет. Попросите специалиста назначить обследование.</p>}<Link to="/account">Личный кабинет</Link></section>;
+ return <section className="family-box"><h1>{t(title[kind])}</h1>{error?<p role="alert">{t(error)}</p>:!children?<p role="status">{t("Загружаем назначения…")}</p>:tasks.length?<><p>{t("Выберите участника. Здесь открываются те же назначения, что и в личном кабинете.")}</p>{tasks.map(({child,task})=><Link className="family-row" key={task.id} to={'/assignments/'+task.id}>{child.label}<ArrowUpRight/></Link>)}</>:<p>{t("Назначений пока нет. Попросите специалиста назначить обследование.")}</p>}<Link to="/account">{t("Личный кабинет")}</Link></section>;
 }

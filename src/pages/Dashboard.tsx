@@ -64,7 +64,7 @@ export default function Dashboard() {
     q = research.filter(r=>r.kind==='questionnaire').length,
     m = data.mri.filter((entry) => !entry.simulated).length;
   const local: Observation[] = [
-    ...research.map(r=>({id:r.id,title:instrumentLabel(r),kind:r.kind,date:r.completedAt!,demo:false,href:`/${r.kind}/report?record=${r.id}`})),
+    ...research.map(r=>({id:r.id,title:t(instrumentLabel(r)),kind:r.kind,date:r.completedAt!,demo:false,href:`/${r.kind}/report?record=${r.id}`})),
     ...data.mri.map((v) => ({
       id: v.id,
       title: v.simulated
@@ -369,3 +369,4 @@ function Chevron() {
   const { demoActivity } = getContent(t);
   return <ArrowUpRight size={16} className="muted" />;
 }
+

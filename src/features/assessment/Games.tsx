@@ -1,8 +1,10 @@
+import {useT} from '../../i18n';
 import {useEffect,useRef,useState} from 'react';
 import type {RecordData,Touch,Trial} from './protocol';
 import {geodeTrialLimit,stimulus,trialCorrect} from './protocol';
 type Props={record:RecordData; onFinish:(r:RecordData)=>void;onCheckpoint?:(r:RecordData)=>void};
 export function GeodeGame({record,onFinish,onCheckpoint}:Props){
+ const t=useT();
  const limit=geodeTrialLimit(record);
  const [phase,setPhase]=useState<'ready'|'cue'|'choice'|'feedback'>('ready');
  const [flash,setFlash]=useState([false,false]),[count,setCount]=useState(0),[reward,setReward]=useState(false);
@@ -33,20 +35,21 @@ export function GeodeGame({record,onFinish,onCheckpoint}:Props){
   setReward(correct);setCount(rows.current.length);
   timer.current=setTimeout(()=>{if(rows.current.length===limit)stop(true);else change('ready');},correct?700:1200);
  }
- return <section className="protocol-game geode-game" aria-label="Игра GEODE">
-  <div className="game-top"><span>GEODE · Экспедиция</span><span>Проба {Math.min(count+1,limit)} / {limit}</span></div>
-  <div className="gem-map" aria-label="Прогресс игры">{Array.from({length:10},(_,i)=><i key={i} data-done={count>=20*(i+1)}>{i+1}</i>)}</div>
-  <p className="game-prompt" aria-live="polite">{phase==='ready'?'Нажми на компас, чтобы продолжить':phase==='cue'?'Смотри на камни':phase==='choice'?'Выбери сторону':reward?'Камень найден!':'Попробуем ещё'}</p>
+ return <section className="protocol-game geode-game" aria-label={t("Игра GEODE")}>
+  <div className="game-top"><span>{t("GEODE · Экспедиция")}</span><span>{t('Проба {0} / {1}',{0:Math.min(count+1,limit),1:limit})}</span></div>
+  <div className="gem-map" aria-label={t("Прогресс игры")}>{Array.from({length:10},(_,i)=><i key={i} data-done={count>=20*(i+1)}>{i+1}</i>)}</div>
+  <p className="game-prompt" aria-live="polite">{phase==='ready'?t('Нажми на компас, чтобы продолжить'):phase==='cue'?t('Смотри на камни'):phase==='choice'?t('Выбери сторону'):reward?t('Камень найден!'):t('Попробуем ещё')}</p>
   <div className="gem-field">
-   <button aria-label="Левая сторона" disabled={phase!=='choice'} className={'gem-side '+(flash[0]?'lit':'')} onClick={()=>choose(0)}><span>◆</span></button>
-   <button className="compass" aria-label="Начать пробу" disabled={phase!=='ready'} onClick={begin}>✦</button>
-   <button aria-label="Правая сторона" disabled={phase!=='choice'} className={'gem-side '+(flash[1]?'lit':'')} onClick={()=>choose(1)}><span>◆</span></button>
+   <button aria-label={t("Левая сторона")} disabled={phase!=='choice'} className={'gem-side '+(flash[0]?'lit':'')} onClick={()=>choose(0)}><span>◆</span></button>
+   <button className="compass" aria-label={t("Начать пробу")} disabled={phase!=='ready'} onClick={begin}>✦</button>
+   <button aria-label={t("Правая сторона")} disabled={phase!=='choice'} className={'gem-side '+(flash[1]?'lit':'')} onClick={()=>choose(1)}><span>◆</span></button>
   </div>
-  <div className="game-bottom"><span>Камней собрано: {rows.current.filter(x=>x.correct).length}</span><button disabled={count===limit} onClick={()=>stop()}>Завершить раньше</button></div>
+  <div className="game-bottom"><span>{t('Камней собрано: {0}',{0:rows.current.filter(x=>x.correct).length})}</span><button disabled={count===limit} onClick={()=>stop()}>{t("Завершить раньше")}</button></div>
  </section>;
 }
 
 export function BubbleGame({record,onFinish}:Props){
+ const t=useT();
  const canvas=useRef<HTMLCanvasElement>(null),finish=useRef(onFinish);finish.current=onFinish;
  const [training,setTraining]=useState(true),[remaining,setRemaining]=useState(20);
  const [practiceHits,setPracticeHits]=useState(0);
@@ -92,9 +95,9 @@ export function BubbleGame({record,onFinish}:Props){
   raf=requestAnimationFrame(draw);
   return()=>{ended=true;cancelAnimationFrame(raf);el.removeEventListener('pointerdown',down);el.removeEventListener('pointermove',move);el.removeEventListener('pointerup',up);el.removeEventListener('pointercancel',up);document.removeEventListener('visibilitychange',hidden);el.removeEventListener('neura-stop',interrupt);};
  },[]);
- return <section className="protocol-game"><div className="game-top"><span>Пузырьки</span><span>{training?`Тренировка · ${practiceHits} / 2`:`${remaining} с`}</span></div>
-  <p className="game-prompt">{training?'Лопни два пузырька, чтобы начать':'Продолжай лопать пузырьки'}</p>
-  <canvas ref={canvas} width={800} height={440} aria-label="Поле с движущимися пузырьками"/>
-  <div className="game-bottom"><span>{training?'Пробные касания не входят в результат':'Записываем касания'}</span><button onClick={()=>canvas.current?.dispatchEvent(new Event('neura-stop'))}>Завершить раньше</button></div>
+ return <section className="protocol-game"><div className="game-top"><span>{t("Пузырьки")}</span><span>{training?t('Тренировка · {0} / 2',{0:practiceHits}):`${remaining} ${t('с')}`}</span></div>
+  <p className="game-prompt">{training?t('Лопни два пузырька, чтобы начать'):t('Продолжай лопать пузырьки')}</p>
+  <canvas ref={canvas} width={800} height={440} aria-label={t("Поле с движущимися пузырьками")}/>
+  <div className="game-bottom"><span>{training?t('Пробные касания не входят в результат'):t('Записываем касания')}</span><button onClick={()=>canvas.current?.dispatchEvent(new Event('neura-stop'))}>{t("Завершить раньше")}</button></div>
  </section>;
 }

@@ -23,3 +23,52 @@
 .family-shell.assignment-shell{max-width:1180px;padding:clamp(12px,3vw,40px)}.child-task{min-width:0}.family-box .assessment form.aq-form{display:block}.family-box .assessment .aq-options label{flex-wrap:nowrap;align-items:flex-start}.family-box .assessment input[type=radio]{width:auto;max-width:none;flex-shrink:0;margin-top:4px}.family-box .assessment .age-label{display:flex;flex-wrap:wrap}.family-box .assessment .aq-options{grid-template-columns:repeat(2,minmax(0,1fr))}
 [data-theme=dark] .protocol-result{color:#edf3f7}[data-theme=dark] .protocol-tag{color:#a2ddc8}[data-theme=dark] .protocol-card{border-color:#3b4e5b}[data-theme=dark] .protocol-note{color:#bacad3}[data-theme=dark] .age-label input{background:var(--surface);color:inherit}
 @media(max-width:700px){.protocol-result .result-header{flex-direction:column}.protocol-result .result-metrics{grid-template-columns:1fr}.result-metrics>div{padding:16px}.result-metrics dd{font-size:32px;margin:8px 0}.result-interpretation{grid-template-columns:1fr;gap:12px}.result-details dl{grid-template-columns:1fr;gap:4px}.result-details dd{margin-bottom:12px}.result-footer{align-items:stretch;flex-direction:column}.family-box.child-task{padding:16px}.family-box .assessment .aq-options{grid-template-columns:1fr}.assessment .aq-form fieldset{min-width:0}.assessment .heading h1{overflow-wrap:anywhere}}
+
+/* Preparation panels use the same appearance tokens as the report. */
+.assessment .setup-card {
+  grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
+  align-items: start;
+  gap: clamp(20px, 4vw, 48px);
+  padding: clamp(20px, 4vw, 42px);
+  border-color: var(--surface-border);
+  color: var(--text-primary);
+}
+.assessment .setup-card aside {
+  align-self: start;
+  border: 1px solid var(--surface-border);
+  border-radius: 18px;
+  padding: clamp(16px, 3vw, 24px);
+  background: var(--surface-raised);
+  color: var(--text-primary);
+}
+.assessment .setup-card aside h3 { margin-top: 0; }
+.assessment .setup-card .age-label {
+  display: grid;
+  grid-template-columns: minmax(0, 180px) minmax(0, 240px);
+}
+.assessment .age-label select, .assessment .age-label input {
+  min-height: 44px;
+  max-width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--surface-border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text-primary);
+}
+.assessment .protocol-card, .assessment .protocol-result { color: var(--text-primary); }
+.assessment .protocol-note { color: var(--text-secondary); }
+.assessment .aq-options label { border-color: var(--surface-border); }
+.assessment .aq-options label:has(input:checked) {
+  background: var(--selection);
+  color: var(--selection-text);
+  border-color: var(--selection-text);
+}
+.protocol-result .result-metrics:has(> :nth-child(4)) {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+@media(max-width:700px) {
+  .assessment .setup-card, .protocol-result .result-metrics:has(> :nth-child(4)) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .assessment .setup-card .age-label { grid-template-columns: minmax(0, 1fr); }
+}
