@@ -5,7 +5,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://REPLACE-WITH-RENDER-API.onrender.com/api/:path*"
+      "destination": "https://server-fnb6.onrender.com/api/:path*"
     },
     {
       "source": "/((?!api/).*)",
