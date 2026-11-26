@@ -5,7 +5,7 @@ import {useRef,useState} from 'react';
 import {Link,useSearchParams} from 'react-router-dom';
 import {Heading} from '../../components/UI';
 import {read,write} from '../../services/storage';
-import {aqInterpretation,aqOptions,aqPage,aqQuestions,aqScore,eligibleGame,gameMetrics,instrumentLabel,sources,versionForAge} from './protocol';
+import {aqInterpretation,aqOptions,aqPage,aqQuestions,aqScore,eligibleGame,gameMetrics,shortGeodeVersion,instrumentLabel,sources,versionForAge} from './protocol';
 import type {Answer,GameKind,RecordData,PatientSex} from './protocol';
 import {BubbleGame,GeodeGame} from './Games';
 import './assessment.css';
@@ -24,6 +24,7 @@ export default function Assessment({kind,initial,save,assigned=false}: {
  const [message,setMessage]=useState(''),[submitted,setSubmitted]=useState<RecordData|null>(()=>state.records.find(r=>r.kind===kind&&r.id===params.get('record'))??(assigned?[...state.records].reverse().find(r=>r.kind===kind&&r.status==='completed')??null:null));
  const [years,setYears]=useState(state.ageMonths?String(Math.floor(state.ageMonths/12)):'');
  const [sex,setSex]=useState<PatientSex>(state.sex??'unspecified');
+ const [geodeMode,setGeodeMode]=useState<'short'|'full'>('short');
  const [applicable,setApplicable]=useState(false),[english,setEnglish]=useState(false);
  const age=Number(years)*12,version=versionForAge(age),game:GameKind=age<132?'bubbles':'geode';
  const history=state.records.filter(r=>r.kind===kind);
@@ -44,7 +45,7 @@ export default function Assessment({kind,initial,save,assigned=false}: {
   if(kind==='game'&&!eligibleGame(game,age))return;
   if(state.records.length>=100){setError('Сохранено 100 записей. Выгрузите данные и выберите другую карточку участника.');return;}
   const r:RecordData={sex,schemaVersion:1,id:crypto.randomUUID(),assessmentId:state.assessmentId,ageMonths:age,createdAt:new Date().toISOString(),
-   kind,instrument:kind==='game'?`${game}-neura`:`aq10-${version}`,protocolVersion:kind==='game'?'neura-2026-11-v1':'neura-aq10-i18n-v1',status:'draft',
+   kind,instrument:kind==='game'?`${game}-neura`:`aq10-${version}`,protocolVersion:kind==='game'?(game==='geode'&&geodeMode==='short'?shortGeodeVersion:'neura-2026-11-v1'):'neura-aq10-i18n-v1',status:'draft',
    ...(kind==='questionnaire'?{answers:Array<Answer>(10).fill(null),aqVersion:version,noLearningDisability:applicable,respondent:version==='adult'?'self' as const:'parent' as const,language,answerLanguages:Array(10).fill(null)}:{} )};
   if(await store(r)){setRecord(r);setSubmitted(null);if(kind==='game')setPlaying(true);}
  }
@@ -71,7 +72,8 @@ export default function Assessment({kind,initial,save,assigned=false}: {
    <label className="age-label">Полных лет<input type="number" min="4" max="17" step="1" value={years} disabled={assigned||state.records.some(r=>r.assessmentId===state.assessmentId)} onChange={e=>setYears(e.target.value)}/></label>
    <label className="age-label">{t('Пол пациента')}<select value={sex} onChange={e=>{const value=e.target.value as PatientSex;setSex(value);}}><option value="unspecified">{t('Не указан')}</option><option value="male">{t('Мужской')}</option><option value="female">{t('Женский')}</option></select></label>
    {!validAge&&<p>Доступный возраст: 4–17 лет.</p>}
-   {validAge&&kind==='game'&&<><h3>{game==='bubbles'?'Пузырьки · 4–10 лет':'GEODE · 11–17 лет'}</h3><p>{game==='bubbles'?'Два пробных попадания, затем 20 секунд записи касаний. Лучше использовать планшет. Мышь сохраняется как отдельный способ ввода.':'Экспедиция за драгоценными камнями: 200 проб, первые 10 — обучение. Можно завершить раньше; такая запись будет отмечена как незавершённая.'}</p>
+   {validAge&&kind==='game'&&<><h3>{game==='bubbles'?'Пузырьки · 4–10 лет':'GEODE · 11–17 лет'}</h3><p>{game==='bubbles'?'Два пробных попадания, затем 20 секунд записи касаний. Лучше использовать планшет. Мышь сохраняется как отдельный способ ввода.':'В обоих режимах первые 10 проб — обучение. Если выйти раньше, запись будет отмечена как незавершённая.'}</p>
+    {game==='geode'&&<label className="age-label">Режим игры<select value={geodeMode} onChange={e=>setGeodeMode(e.target.value==='full'?'full':'short')}><option value="short">Короткий · 40 проб</option><option value="full">Полный · 200 проб</option></select></label>}
     <p>{game==='bubbles'?'Взрослый может показать игру перед началом. Во время записи ребёнок действует самостоятельно.':'Нажимайте на компас и попробуйте понять, как собирать камни. В игре есть краткие вспышки.'}</p>
     <p className="protocol-note">Версия Neura по исследовательскому протоколу. Её клиническая точность не установлена. При переключении вкладки запись прерывается.</p></>}
    {validAge&&kind==='questionnaire'&&<><h3>AQ-10 {version==='child'?'Child · 4–11 лет':version==='adolescent'?'Adolescent · 12–15 лет':'Adult · самостоятельное заполнение'}</h3>
@@ -100,7 +102,8 @@ export function Result({record:r,exportData=downloadRecord}:{record:RecordData;e
    <p className="result-explanation">Это показатели выполнения задания. По ним не рассчитаны диагноз или вероятность РАС.</p>
   </>}
   <details className="result-details"><summary>Подробности записи и протокола</summary><dl><dt>Методика</dt><dd>{r.protocolVersion}</dd><dt>Обследование</dt><dd>{r.assessmentId}</dd><dt>Запись</dt><dd>{r.id}</dd></dl>{r.instrument==='bubbles-neura'&&<p>Координаты в единицах поля 800 × 440, без миллиметровой калибровки. Способ ввода сохранён для каждого касания.</p>}</details>
-  {r.status==='completed'&&<div className="result-notice"><button disabled={predicting} onClick={async()=>{setPredicting(true);setPredictionError('');try{setPrediction(await api('/research/predict',{schemaVersion:1,assessmentId:r.assessmentId,ageMonths:r.ageMonths,records:[r]}));}catch(e){setPredictionError((e as Error).message);}finally{setPredicting(false);}}}>{predicting?'Анализируем…':'Сравнить с выборкой модели'}</button>{prediction&&<p>{prediction.available?`Перцентиль необычности профиля: ${prediction.percentile}. ${prediction.description}`:prediction.reason}</p>}{predictionError&&<p role="alert">{predictionError}</p>}</div>}<footer className="result-footer"><button className="button secondary" onClick={()=>exportData(r)}>Скачать запись JSON</button><Link to="/evidence">Научная основа методики</Link></footer>
+  {r.status==='completed'&&r.protocolVersion===shortGeodeVersion&&<p className="result-explanation">Для короткого режима доступны показатели игры. Сравнение с моделью доступно в полном режиме.</p>}
+  {r.status==='completed'&&r.protocolVersion!==shortGeodeVersion&&<div className="result-notice"><button disabled={predicting} onClick={async()=>{setPredicting(true);setPredictionError('');try{setPrediction(await api('/research/predict',{schemaVersion:1,assessmentId:r.assessmentId,ageMonths:r.ageMonths,records:[r]}));}catch(e){setPredictionError((e as Error).message);}finally{setPredicting(false);}}}>{predicting?'Анализируем…':'Сравнить с выборкой модели'}</button>{prediction&&<p>{prediction.available?`Перцентиль необычности профиля: ${prediction.percentile}. ${prediction.description}`:prediction.reason}</p>}{predictionError&&<p role="alert">{predictionError}</p>}</div>}<footer className="result-footer"><button className="button secondary" onClick={()=>exportData(r)}>Скачать запись JSON</button><Link to="/evidence">Научная основа методики</Link></footer>
  </section>;
 }
 function downloadRecord(data:unknown){const url=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download='neura-assessment.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}

@@ -1,8 +1,9 @@
 import {useEffect,useRef,useState} from 'react';
 import type {RecordData,Touch,Trial} from './protocol';
-import {stimulus,trialCorrect} from './protocol';
+import {geodeTrialLimit,stimulus,trialCorrect} from './protocol';
 type Props={record:RecordData; onFinish:(r:RecordData)=>void;onCheckpoint?:(r:RecordData)=>void};
 export function GeodeGame({record,onFinish,onCheckpoint}:Props){
+ const limit=geodeTrialLimit(record);
  const [phase,setPhase]=useState<'ready'|'cue'|'choice'|'feedback'>('ready');
  const [flash,setFlash]=useState([false,false]),[count,setCount]=useState(0),[reward,setReward]=useState(false);
  const rows=useRef<Trial[]>([]),current=useRef(stimulus(0)),shown=useRef<number[]>([]),decisionAt=useRef(0);
@@ -10,7 +11,7 @@ export function GeodeGame({record,onFinish,onCheckpoint}:Props){
  const finish=useRef(onFinish);finish.current=onFinish;const checkpoint=useRef(onCheckpoint);checkpoint.current=onCheckpoint;
  function stop(completed=false){if(ended.current)return;ended.current=true;cancelAnimationFrame(frame.current);clearTimeout(timer.current);
   finish.current({...record,trials:rows.current,status:completed?'completed':'interrupted',...(completed?{completedAt:new Date().toISOString()}:{} )});}
- useEffect(()=>{const hidden=()=>{if(document.hidden)stop();};document.addEventListener('visibilitychange',hidden);
+ useEffect(()=>{const hidden=()=>{if(document.hidden)stop(rows.current.length===limit);};document.addEventListener('visibilitychange',hidden);
   return()=>{document.removeEventListener('visibilitychange',hidden);cancelAnimationFrame(frame.current);clearTimeout(timer.current);};},[]);
  function change(p:typeof phase){phaseRef.current=p;setPhase(p);}
  function begin(){if(phaseRef.current!=='ready'||ended.current)return;current.current=stimulus(rows.current.length);shown.current=[];change('cue');
@@ -28,12 +29,12 @@ export function GeodeGame({record,onFinish,onCheckpoint}:Props){
   const presentedAt=Array.from({length:10},(_,i)=>shown.current[i]??-1);
   rows.current=[...rows.current,{trial:rows.current.length+1,...current.current,choice,correct,rt:performance.now()-decisionAt.current,presentedAt,
    timingValid:presentedAt.every((t,i)=>t>=i*260 && t-i*260<30)}];
-  if(rows.current.length%10===0&&rows.current.length<200)checkpoint.current?.({...record,trials:rows.current});
+  if(rows.current.length%10===0&&rows.current.length<limit)checkpoint.current?.({...record,trials:rows.current});
   setReward(correct);setCount(rows.current.length);
-  timer.current=setTimeout(()=>{if(rows.current.length===200)stop(true);else change('ready');},correct?700:1200);
+  timer.current=setTimeout(()=>{if(rows.current.length===limit)stop(true);else change('ready');},correct?700:1200);
  }
  return <section className="protocol-game geode-game" aria-label="Игра GEODE">
-  <div className="game-top"><span>GEODE · Экспедиция</span><span>Проба {Math.min(count+1,200)} / 200</span></div>
+  <div className="game-top"><span>GEODE · Экспедиция</span><span>Проба {Math.min(count+1,limit)} / {limit}</span></div>
   <div className="gem-map" aria-label="Прогресс игры">{Array.from({length:10},(_,i)=><i key={i} data-done={count>=20*(i+1)}>{i+1}</i>)}</div>
   <p className="game-prompt" aria-live="polite">{phase==='ready'?'Нажми на компас, чтобы продолжить':phase==='cue'?'Смотри на камни':phase==='choice'?'Выбери сторону':reward?'Камень найден!':'Попробуем ещё'}</p>
   <div className="gem-field">
@@ -41,13 +42,14 @@ export function GeodeGame({record,onFinish,onCheckpoint}:Props){
    <button className="compass" aria-label="Начать пробу" disabled={phase!=='ready'} onClick={begin}>✦</button>
    <button aria-label="Правая сторона" disabled={phase!=='choice'} className={'gem-side '+(flash[1]?'lit':'')} onClick={()=>choose(1)}><span>◆</span></button>
   </div>
-  <div className="game-bottom"><span>Камней собрано: {rows.current.filter(x=>x.correct).length}</span><button onClick={()=>stop()}>Завершить раньше</button></div>
+  <div className="game-bottom"><span>Камней собрано: {rows.current.filter(x=>x.correct).length}</span><button disabled={count===limit} onClick={()=>stop()}>Завершить раньше</button></div>
  </section>;
 }
 
 export function BubbleGame({record,onFinish}:Props){
  const canvas=useRef<HTMLCanvasElement>(null),finish=useRef(onFinish);finish.current=onFinish;
  const [training,setTraining]=useState(true),[remaining,setRemaining]=useState(20);
+ const [practiceHits,setPracticeHits]=useState(0);
  useEffect(()=>{
   const el=canvas.current!,ctx=el.getContext('2d')!;
   let raf=0,ended=false,trainingHits=0,start=0,previous=performance.now();
@@ -55,8 +57,9 @@ export function BubbleGame({record,onFinish}:Props){
   const width=800,height=440,radius=38;
   const bubbles=Array.from({length:5},(_,i)=>({x:80+i*160,y:height+radius+i*70}));
   function stop(completed:boolean){if(ended)return;ended=true;cancelAnimationFrame(raf);
-   if(active){active.row.cancelled=true;active.row.duration=performance.now()-start-active.row.t;touches.push(active.row);active=null;}
-   finish.current({...record,touches,durationMs:start?Math.min(20000,performance.now()-start):0,
+   if(active&&start){active.row.cancelled=true;active.row.duration=Math.max(0,Math.min(20000,performance.now()-start)-active.row.t);touches.push(active.row);}
+   active=null;
+   finish.current({...record,touches,durationMs:completed?20000:start?Math.min(20000,performance.now()-start):0,
     device:{width:el.getBoundingClientRect().width,height:el.getBoundingClientRect().height,pixelRatio:devicePixelRatio,touchPoints:navigator.maxTouchPoints},
     status:completed?'completed':'interrupted',...(completed?{completedAt:new Date().toISOString()}:{} )});
   }
@@ -79,7 +82,7 @@ export function BubbleGame({record,onFinish}:Props){
   function move(e:PointerEvent){if(!active||active.id!==e.pointerId)return;const p=pos(e);active.row.distance+=Math.hypot(p.x-active.lastX,p.y-active.lastY);active.lastX=p.x;active.lastY=p.y;}
   function up(e:PointerEvent){if(!active||active.id!==e.pointerId||ended)return;move(e);active.row.cancelled=e.type==='pointercancel';
    if(start){active.row.duration=performance.now()-start-active.row.t;touches.push(active.row);}
-   else if(active.row.hit&&!active.row.cancelled){trainingHits++;if(trainingHits>=2){start=performance.now();setTraining(false);}}
+   else if(active.row.hit&&!active.row.cancelled){trainingHits++;setPracticeHits(trainingHits);if(trainingHits>=2){start=performance.now();setTraining(false);}}
    active=null;
   }
   const hidden=()=>{if(document.hidden)stop(false);};
@@ -89,7 +92,7 @@ export function BubbleGame({record,onFinish}:Props){
   raf=requestAnimationFrame(draw);
   return()=>{ended=true;cancelAnimationFrame(raf);el.removeEventListener('pointerdown',down);el.removeEventListener('pointermove',move);el.removeEventListener('pointerup',up);el.removeEventListener('pointercancel',up);document.removeEventListener('visibilitychange',hidden);el.removeEventListener('neura-stop',interrupt);};
  },[]);
- return <section className="protocol-game"><div className="game-top"><span>Пузырьки</span><span>{training?'Знакомство с игрой':`${remaining} с`}</span></div>
+ return <section className="protocol-game"><div className="game-top"><span>Пузырьки</span><span>{training?`Тренировка · ${practiceHits} / 2`:`${remaining} с`}</span></div>
   <p className="game-prompt">{training?'Лопни два пузырька, чтобы начать':'Продолжай лопать пузырьки'}</p>
   <canvas ref={canvas} width={800} height={440} aria-label="Поле с движущимися пузырьками"/>
   <div className="game-bottom"><span>{training?'Пробные касания не входят в результат':'Записываем касания'}</span><button onClick={()=>canvas.current?.dispatchEvent(new Event('neura-stop'))}>Завершить раньше</button></div>

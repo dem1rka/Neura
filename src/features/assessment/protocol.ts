@@ -101,7 +101,7 @@ export function gameSummary(r:RecordData) {
   if(r.instrument==='geode-neura'){
     const trials=(r.trials??[]).filter(x=>x.trial>10 && x.timingValid);
     const informative=trials.filter(x=>sum(x.left)!==sum(x.right));
-    return [`Проб: ${r.trials?.length??0} / 200`, `После обучения, без нарушений времени: ${trials.length}`,
+    return [`Проб: ${r.trials?.length??0} / ${geodeTrialLimit(r)}`, `После обучения, без нарушений времени: ${trials.length}`,
       `Верных выборов (без равных стимулов): ${informative.filter(x=>x.correct).length} / ${informative.length}`];
   }
   const touches=(r.touches??[]).filter(x=>!x.cancelled);
@@ -113,13 +113,17 @@ export function gameSummary(r:RecordData) {
 export function instrumentLabel(r:Pick<RecordData,'instrument'>) {
  return ({'bubbles-neura':'Пузырьки','geode-neura':'GEODE · Экспедиция','aq10-child':'AQ-10 · Детская форма','aq10-adolescent':'AQ-10 · Подростковая форма','aq10-adult':'AQ-10 · Взрослая форма'})[r.instrument]??r.instrument;
 }
+export const shortGeodeVersion = 'neura-geode-short-v1';
+export const geodeTrialLimit = (r: Pick<RecordData,'protocolVersion'>) => r.protocolVersion === shortGeodeVersion ? 40 : 200;
+
 export function gameMetrics(r:RecordData) {
  if(r.instrument==='geode-neura') {
   const trials=r.trials??[],valid=trials.filter(t=>t.trial>10&&t.timingValid);
   const informative=valid.filter(t=>sum(t.left)!==sum(t.right));
   return [
-   {label:'Выполнено проб',value:`${trials.length} / 200`,note:'Первые 10 проб — обучение'},
+   {label:'Выполнено проб',value:`${trials.length} / ${geodeTrialLimit(r)}`,note:'Первые 10 проб — обучение'},
    {label:'Пригодно для анализа',value:String(valid.length),note:'После обучения, с корректным временем предъявления'},
+   {label:'Медиана времени ответа',value: medianReactionTime(trials.map(t=>t.rt)),note:'По основным пробам с корректным временем предъявления'},
    {label:'Верных выборов',value:informative.length?`${informative.filter(t=>t.correct).length} / ${informative.length}`:'—',note:informative.length?'Без проб с равным числом вспышек':'Пока нет подходящих проб после обучения'},
   ];
  }
@@ -129,4 +133,11 @@ export function gameMetrics(r:RecordData) {
   {label:'Попаданий',value:String(touches.filter(t=>t.hit).length),note:'В пределах пузырька в момент касания'},
   {label:'Время записи',value:`${((r.durationMs??0)/1000).toFixed(1)} с`,note:'Основная часть, без обучения'},
  ];
+}
+
+function medianReactionTime(times:number[]) {
+ const sorted=[...times].sort((a,b)=>a-b);
+ if(!sorted.length)return '—';
+ const mid=Math.floor(sorted.length/2);
+ return `${Math.round(sorted.length%2 ? sorted[mid] : (sorted[mid-1]+sorted[mid])/2)} мс`;
 }
