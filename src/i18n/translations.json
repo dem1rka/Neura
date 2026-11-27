@@ -3819,6 +3819,26 @@
     "en": "The model is temporarily unavailable",
     "kk": "Модель уақытша қолжетімсіз"
   },
+  "Модель AQ-10 поддерживает только детскую форму (4–11 лет).": {
+    "en": "The AQ-10 model supports only the child form (ages 4–11).",
+    "kk": "AQ-10 моделі тек 4–11 жастағы балаларға арналған сауалнама нұсқасын қолдайды."
+  },
+  "Сервис модели отклонил ключ доступа.": {
+    "en": "The model service rejected the access key.",
+    "kk": "Модель қызметі кіру кілтін қабылдамады."
+  },
+  "Сервис модели не успел ответить. Повторите сравнение.": {
+    "en": "The model service took too long to respond. Try the comparison again.",
+    "kk": "Модель қызметі уақытында жауап бермеді. Салыстыруды қайталаңыз."
+  },
+  "Для анализа требуется завершённое задание.": {
+    "en": "Complete the task to run the comparison.",
+    "kk": "Салыстыру үшін тапсырманы аяқтаңыз."
+  },
+  "Сравнение с моделью доступно только для полного режима GEODE.": {
+    "en": "Model comparison is available only for the full GEODE game.",
+    "kk": "Модельмен салыстыру GEODE ойынының тек толық режимінде қолжетімді."
+  },
   "Сервис модели не настроен": {
     "en": "The model service is not configured",
     "kk": "Модель қызметі бапталмаған"
@@ -3974,5 +3994,45 @@
   "Игра и анкета дают отдельные показатели. Объединённая диагностическая модель GEODE + AQ-10 не обучена. Наличие открытых данных не подтверждает точность браузерной адаптации.": {
     "en": "Games and questionnaires report separate measures. Clinical accuracy of the browser adaptation requires evaluation.",
     "kk": "Ойын мен сауалнама көрсеткіштері бөлек беріледі. Браузер нұсқасының клиникалық дәлдігін тексеру қажет."
+  },
+  "Систематический обзор и метаанализ": {
+    "en": "Systematic review and meta-analysis",
+    "kk": "Жүйелі шолу және метаталдау"
+  },
+  "Обзор объединяет 134 исследования и 159 экспериментов по распознаванию РАС на основе МРТ. Оценочное число уникальных участников — 4 982; выборки отдельных работ пересекаются.": {
+    "en": "The review covers 134 studies and 159 experiments on MRI-based autism classification. The estimated number of unique participants is 4,982, with overlap between study samples.",
+    "kk": "Шолуда МРТ арқылы аутизмді жіктеуге арналған 134 зерттеу мен 159 эксперимент қамтылған. Бірегей қатысушылардың болжамды саны — 4 982. Кейбір зерттеулердің іріктемелері қабаттасады."
+  },
+  "Чувствительность — 76,0% (95% ДИ: 74,1–77,8); специфичность — 75,7% (95% ДИ: 74,0–77,4); AUC — 0,823.": {
+    "en": "Sensitivity was 76.0% (95% CI 74.1–77.8%), specificity was 75.7% (95% CI 74.0–77.4%), and AUC was 0.823.",
+    "kk": "Сезімталдық — 76,0% (95% СА 74,1–77,8%), ерекшелік — 75,7% (95% СА 74,0–77,4%), AUC — 0,823."
+  },
+  "Авторы отмечают неоднородность исследований и неопределённость переноса результатов на новые выборки. Эти показатели не являются точностью Neura.": {
+    "en": "The authors report differences between studies and uncertainty about how well the results generalize to new samples. These figures describe the studies included in the review.",
+    "kk": "Авторлар зерттеулер арасындағы айырмашылықтарды және нәтижелердің жаңа іріктемелерге қаншалықты қолданылатыны белгісіз екенін атап өтеді. Бұл көрсеткіштер шолуға кірген зерттеулерге қатысты."
+  },
+  "Исследование модели на данных ABIDE I/II": {
+    "en": "Model study using ABIDE I/II data",
+    "kk": "ABIDE I/II деректеріне негізделген модельді зерттеу"
+  },
+  "Исследование объединяет структурную МРТ и функциональную связность rs-fMRI, коррекцию различий между центрами ComBat, аугментацию cGAN и объяснимое глубокое обучение.": {
+    "en": "The study combines structural MRI and functional connectivity from resting-state fMRI, ComBat correction for differences between sites, cGAN data augmentation, and explainable deep learning.",
+    "kk": "Зерттеу құрылымдық МРТ мен тыныштық күйіндегі фМРТ-ның функционалдық байланысын, орталықтар арасындағы айырмашылықтарды ComBat арқылы түзетуді, cGAN арқылы деректерді көбейтуді және түсіндірілетін терең оқытуды біріктіреді."
+  },
+  "В стратифицированной пятикратной перекрёстной проверке AUC составила 0,871 ± 0,016, сбалансированная точность — 0,797 ± 0,012. При исключении одного центра (LOSO) AUC — 0,783 ± 0,041.": {
+    "en": "In stratified five-fold cross-validation, AUC was 0.871 ± 0.016 and balanced accuracy was 0.797 ± 0.012. Leave-one-site-out validation yielded an AUC of 0.783 ± 0.041.",
+    "kk": "Стратификацияланған бес бөлікті айқаспалы тексеруде AUC 0,871 ± 0,016, ал теңгерімді дәлдік 0,797 ± 0,012 болды. Бір орталықты кезекпен алып тастап тексергенде (LOSO) AUC 0,783 ± 0,041 болды."
+  },
+  "Результаты относятся к модели авторов и условиям их эксперимента. Снижение AUC при проверке на другом центре показывает важность внешней проверки; работа не подтверждает валидацию нашей реализации.": {
+    "en": "These results describe the authors’ model under their experimental conditions. The lower AUC when testing on a separate site highlights the need for independent validation of Neura.",
+    "kk": "Нәтижелер авторлардың моделіне және олардың эксперимент жағдайларына қатысты. Бөлек орталықта тексергенде AUC көрсеткішінің төмендеуі Neura-ны тәуелсіз тексерудің маңызын көрсетеді."
+  },
+  "Sam Perochon и соавторы": {
+    "en": "Sam Perochon et al.",
+    "kk": "Sam Perochon және бірлескен авторлар"
+  },
+  "Sucheta Chakravarty и соавторы": {
+    "en": "Sucheta Chakravarty et al.",
+    "kk": "Sucheta Chakravarty және бірлескен авторлар"
   }
 }

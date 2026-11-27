@@ -32,3 +32,30 @@ test('retired routes use current modules',async({page})=>{
   await page.goto(path);await expect(page.getByRole('heading',{name:path.includes('game')?'Игра для наблюдения':'Анкета AQ-10',exact:true})).toBeVisible();await expect(page.locator('.assessment')).toBeVisible();
  }
 });
+
+test('AQ-10 results offer model comparison only for the child form', async ({page, workspace}) => {
+ const record = {schemaVersion:1, id, assessmentId, ageMonths:144, createdAt:'2026-11-24T10:00:00Z',
+  completedAt:'2026-11-24T10:05:00Z', kind:'questionnaire', instrument:'aq10-adolescent', aqVersion:'adolescent',
+  answers:[0,2,0,0,0,0,0,0,0,0], respondent:'parent', language:'ru', protocolVersion:'neura-aq10-i18n-v1', status:'completed'};
+ const state = {schemaVersion:1, assessmentId, ageMonths:144, records:[record]};
+ workspace['research-assessments-v1'] = state;
+ let requests = 0;
+ await page.route('**/api/research/predict', route => {
+  requests++;
+  expect(route.request().postDataJSON().records[0].instrument).toBe('aq10-child');
+  return route.fulfill({json:{available:true, percentile:42}});
+ });
+ await page.goto('/questionnaire/report?record='+id);
+ const compare = page.getByRole('button', {name:'Сравнить с выборкой модели'});
+ await expect(page.getByText('Модель AQ-10 поддерживает только детскую форму (4–11 лет).')).toBeVisible();
+ await expect(page.locator('.protocol-score')).toHaveText('5 / 10');
+ await expect(compare).toHaveCount(0);
+ expect(requests).toBe(0);
+
+ const child = {...record, ageMonths:132, instrument:'aq10-child', aqVersion:'child'};
+ workspace['research-assessments-v1'] = {...state, ageMonths:132, records:[child]};
+ await page.reload();
+ await compare.click();
+ await expect(page.getByText('Перцентиль необычности профиля: 42.')).toBeVisible();
+ expect(requests).toBe(1);
+});

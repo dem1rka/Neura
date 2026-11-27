@@ -91,7 +91,6 @@ export default function Assessment({kind,initial,save,assigned=false}: {
 }
 export function Result({record:r,exportData=downloadRecord}:{record:RecordData;exportData?:(data:unknown)=>void}){
  const t=useT();
- const [prediction,setPrediction]=useState<{available?:boolean;percentile?:number;reason?:string;description?:string}|null>(null),[predicting,setPredicting]=useState(false),[predictionError,setPredictionError]=useState('');
  const score=r.aqVersion&&r.answers?aqScore(r.aqVersion,r.answers):null;
  const status=r.status==='completed'?t('Завершено'):r.status==='draft'?t('Черновик'):'Прервано';
  return <section className="protocol-result" aria-label={t('Результат: {0}',{0:t(instrumentLabel(r))})}>
@@ -103,8 +102,50 @@ export function Result({record:r,exportData=downloadRecord}:{record:RecordData;e
    <p className="result-explanation">{t("Это показатели выполнения задания. По ним не рассчитаны диагноз или вероятность РАС.")}</p>
   </>}
   <details className="result-details"><summary>{t("Подробности записи и протокола")}</summary><dl><dt>{t("Методика")}</dt><dd>{r.protocolVersion}</dd><dt>{t("Обследование")}</dt><dd>{r.assessmentId}</dd><dt>{t("Запись")}</dt><dd>{r.id}</dd></dl>{r.instrument==='bubbles-neura'&&<p>{t("Координаты в единицах поля 800 × 440, без миллиметровой калибровки. Способ ввода сохранён для каждого касания.")}</p>}</details>
-  {r.status==='completed'&&r.protocolVersion===shortGeodeVersion&&<p className="result-explanation">{t("Для короткого режима доступны показатели игры. Сравнение с моделью доступно в полном режиме.")}</p>}
-  {r.status==='completed'&&r.protocolVersion!==shortGeodeVersion&&<div className="result-notice"><button disabled={predicting} onClick={async()=>{setPredicting(true);setPredictionError('');try{setPrediction(await api('/research/predict',{schemaVersion:1,assessmentId:r.assessmentId,ageMonths:r.ageMonths,records:[r]}));}catch(e){setPredictionError((e as Error).message);}finally{setPredicting(false);}}}>{predicting?t('Анализируем…'):t('Сравнить с выборкой модели')}</button>{prediction&&<p>{prediction.available?t('Перцентиль необычности профиля: {0}.',{0:prediction.percentile??'—'})+' '+t(prediction.description??''):t(prediction.reason??'')}</p>}{predictionError&&<p role="alert">{t(predictionError)}</p>}</div>}<footer className="result-footer"><button className="button secondary" onClick={()=>exportData(r)}>{t("Скачать запись JSON")}</button><Link to="/evidence">{t("Научная основа методики")}</Link></footer>
+  {r.status==='completed'&&<ModelComparison key={r.id} record={r}/>}
+  <footer className="result-footer"><button className="button secondary" onClick={()=>exportData(r)}>{t("Скачать запись JSON")}</button><Link to="/evidence">{t("Научная основа методики")}</Link></footer>
  </section>;
+}
+
+type Prediction = {available:true; percentile:number; description?:string} | {available:false; reason:string};
+
+function ModelComparison({record}:{record:RecordData}) {
+ const t = useT();
+ const [prediction, setPrediction] = useState<Prediction | null>(null);
+ const [pending, setPending] = useState(false);
+ const [error, setError] = useState('');
+
+ if (record.protocolVersion === shortGeodeVersion) {
+  return <p className="result-explanation">{t('Для короткого режима доступны показатели игры. Сравнение с моделью доступно в полном режиме.')}</p>;
+ }
+ if (record.instrument !== 'aq10-child' && record.instrument !== 'geode-neura') {
+  return <p className="result-explanation">{record.kind === 'questionnaire'
+   ? t('Модель AQ-10 поддерживает только детскую форму (4–11 лет).')
+   : t('Для этой методики пока нет подходящей обученной модели.')}</p>;
+ }
+
+ async function compare() {
+  setPending(true);
+  setError('');
+  setPrediction(null);
+  try {
+   const result = await api<Prediction>('/research/predict', {
+    schemaVersion:1, assessmentId:record.assessmentId, ageMonths:record.ageMonths, records:[record],
+   });
+   setPrediction(result);
+  } catch (cause) {
+   setError(cause instanceof Error && !(cause instanceof TypeError) ? cause.message : 'Не удалось получить результат модели. Попробуйте ещё раз.');
+  } finally {
+   setPending(false);
+  }
+ }
+
+ return <div className="result-notice">
+  <button disabled={pending} onClick={compare}>{pending ? t('Анализируем…') : t('Сравнить с выборкой модели')}</button>
+  {prediction && <p role="status">{prediction.available
+   ? t('Перцентиль необычности профиля: {0}.', {0:prediction.percentile}) + ' ' + t(prediction.description ?? '')
+   : t(prediction.reason)}</p>}
+  {error && <p role="alert">{t(error)}</p>}
+ </div>;
 }
 function downloadRecord(data:unknown){const url=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download='neura-assessment.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
